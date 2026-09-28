@@ -1,0 +1,17 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Spike caches and downloaded artifacts (never commit model weights)
+.cache/
+spikes/**/artifacts/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+.DS_Store
