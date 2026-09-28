@@ -9,7 +9,7 @@ each Phase 1 task's `Depends On`.
 
 ### PH0-SPIKE-001 — Validate sherpa-onnx against a custom Nemotron 3 Diarization export (spike)
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** None
 **Related ADR(s):** ADR-0003, ADR-0004
 
@@ -37,6 +37,8 @@ code.
 
 **Suggested Verification:** Findings note committed to this repo (e.g.
 `docs/findings/PH0-SPIKE-001.md`) plus the scratch console app.
+
+**Completion note (2026-09-29):** Done with a documented negative on the sherpa-onnx path and a validated raw-ONNX-Runtime substitute. Full findings: `Agent-docs/findings/PH0-SPIKE-001.md`. Deliverables: `spikes/PH0-SPIKE-001/` (Python export + validation harness; C# sherpa probe and ONNX Runtime runner). Headline evidence: exported step graphs validated per-step vs the PyTorch reference (streaming max diff 7.6e-05 over 208 chunks incl. compressed-cache steps; offline 1.53e-04 with the mask-aware v2 graph); sherpa-onnx v1.13.8 aborts natively on the custom model (`'sample_rate' does not exist in the metadata`) and exposes no streaming diarization API; recommendation = raw Microsoft.ML.OnnxRuntime for the diarizer per ADR-0003's anticipated partial fallback.
 
 ---
 

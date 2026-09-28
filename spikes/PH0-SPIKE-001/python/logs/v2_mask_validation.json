@@ -1,0 +1,28 @@
+{
+  "v2_onnx": "M:\\Agentic\\Projects\\Scribir\\spikes\\PH0-SPIKE-001\\artifacts\\onnx\\nemotron3_stream_step_mask.onnx",
+  "exported_with": "dynamo+dynamic_shapes(tuple)",
+  "stream_checks": [
+    {
+      "tag": "stream-small",
+      "L": 0,
+      "Tm": 104,
+      "max_abs_diff": 1.52587890625e-05
+    },
+    {
+      "tag": "stream-mid",
+      "L": 37,
+      "Tm": 104,
+      "max_abs_diff": 2.288818359375e-05
+    },
+    {
+      "tag": "stream-large",
+      "L": 104,
+      "Tm": 104,
+      "max_abs_diff": 3.4332275390625e-05
+    }
+  ],
+  "offline_max_abs_diff_vs_masked_ref": 0.000152587890625,
+  "offline_segments_torch": 29,
+  "offline_segments_onnx": 29,
+  "offline_segments_match": true
+}

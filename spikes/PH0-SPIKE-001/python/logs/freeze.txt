@@ -1,0 +1,7 @@
+﻿python.exe : M:\Agentic\Projects\Scribir\spikes\PH0-SPIKE-001\python\.venv\Scripts\python.exe: No module named pip
+At line:1 char:94
++ ... PYTHONUTF8='1'; & .venv\Scripts\python.exe -m pip freeze 2>&1 | Out-F ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (M:\Agentic\Proj...odule named pip:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

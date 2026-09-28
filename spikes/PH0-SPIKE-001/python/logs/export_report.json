@@ -1,0 +1,98 @@
+{
+  "exported_with": "dynamo+dynamic_shapes(tuple)",
+  "onnx_path": "M:\\Agentic\\Projects\\Scribir\\spikes\\PH0-SPIKE-001\\artifacts\\onnx\\nemotron3_stream_step.onnx",
+  "onnx_bytes": 4450144,
+  "torch": "2.14.0+cpu",
+  "transformers": "5.18.0.dev0",
+  "onnxruntime": "1.30.0",
+  "example_shapes": {
+    "input_features": [
+      1,
+      104,
+      128
+    ],
+    "cached_embeds": [
+      1,
+      21,
+      512
+    ]
+  },
+  "checks": [
+    {
+      "L": 0,
+      "Tm": 104,
+      "torch_shape": [
+        1,
+        104,
+        8
+      ],
+      "onnx_shape": [
+        1,
+        104,
+        8
+      ],
+      "max_abs_diff": 1.52587890625e-05
+    },
+    {
+      "L": 5,
+      "Tm": 104,
+      "torch_shape": [
+        1,
+        144,
+        8
+      ],
+      "onnx_shape": [
+        1,
+        144,
+        8
+      ],
+      "max_abs_diff": 2.47955322265625e-05
+    },
+    {
+      "L": 37,
+      "Tm": 104,
+      "torch_shape": [
+        1,
+        400,
+        8
+      ],
+      "onnx_shape": [
+        1,
+        400,
+        8
+      ],
+      "max_abs_diff": 3.24249267578125e-05
+    },
+    {
+      "L": 104,
+      "Tm": 104,
+      "torch_shape": [
+        1,
+        936,
+        8
+      ],
+      "onnx_shape": [
+        1,
+        936,
+        8
+      ],
+      "max_abs_diff": 3.814697265625e-05
+    },
+    {
+      "L": 21,
+      "Tm": 101,
+      "torch_shape": [
+        1,
+        272,
+        8
+      ],
+      "onnx_shape": [
+        1,
+        272,
+        8
+      ],
+      "max_abs_diff": 2.6702880859375e-05
+    }
+  ],
+  "max_abs_diff": 3.814697265625e-05
+}

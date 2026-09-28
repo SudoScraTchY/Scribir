@@ -1,0 +1,194 @@
+{
+  "audio": "M:\\Agentic\\Projects\\Scribir\\spikes\\PH0-SPIKE-001\\artifacts\\models\\diarization_example.mp3",
+  "tag": "example",
+  "total_frames": 9761,
+  "num_chunks": 4,
+  "max_abs_diff": 10.063308715820312,
+  "torch_mask_effect": 10.063313484191895,
+  "onnx_vs_nomask": 0.000156402587890625,
+  "mask_zeros": 1,
+  "segments_torch": 29,
+  "segments_onnx": 29,
+  "match": true,
+  "segments_onnx_list": [
+    {
+      "Start": 0.35,
+      "End": 9.31,
+      "Speaker": 0
+    },
+    {
+      "Start": 9.15,
+      "End": 13.81,
+      "Speaker": 1
+    },
+    {
+      "Start": 13.55,
+      "End": 18.32,
+      "Speaker": 2
+    },
+    {
+      "Start": 18.38,
+      "End": 23.59,
+      "Speaker": 3
+    },
+    {
+      "Start": 23.77,
+      "End": 28.1,
+      "Speaker": 4
+    },
+    {
+      "Start": 27.8,
+      "End": 32.67,
+      "Speaker": 5
+    },
+    {
+      "Start": 32.43,
+      "End": 36.74,
+      "Speaker": 4
+    },
+    {
+      "Start": 36.44,
+      "End": 38.51,
+      "Speaker": 5
+    },
+    {
+      "Start": 38.79,
+      "End": 45.41,
+      "Speaker": 5
+    },
+    {
+      "Start": 45.91,
+      "End": 53.17,
+      "Speaker": 0
+    },
+    {
+      "Start": 53.86,
+      "End": 55.59,
+      "Speaker": 3
+    },
+    {
+      "Start": 54.28,
+      "End": 57.35,
+      "Speaker": 4
+    },
+    {
+      "Start": 57.3,
+      "End": 60.67,
+      "Speaker": 2
+    },
+    {
+      "Start": 61.27,
+      "End": 66.97,
+      "Speaker": 0
+    },
+    {
+      "Start": 67.67,
+      "End": 69.63,
+      "Speaker": 3
+    },
+    {
+      "Start": 67.68,
+      "End": 68.76,
+      "Speaker": 4
+    },
+    {
+      "Start": 68.08,
+      "End": 68.87,
+      "Speaker": 1
+    },
+    {
+      "Start": 68.12,
+      "End": 69.13,
+      "Speaker": 2
+    },
+    {
+      "Start": 70.54,
+      "End": 76.62,
+      "Speaker": 0
+    },
+    {
+      "Start": 76.97,
+      "End": 78.2,
+      "Speaker": 0
+    },
+    {
+      "Start": 77.08,
+      "End": 77.73,
+      "Speaker": 1
+    },
+    {
+      "Start": 77.76,
+      "End": 78.7,
+      "Speaker": 3
+    },
+    {
+      "Start": 78.32,
+      "End": 78.98,
+      "Speaker": 4
+    },
+    {
+      "Start": 79.01,
+      "End": 80.05,
+      "Speaker": 2
+    },
+    {
+      "Start": 79.48,
+      "End": 80.56,
+      "Speaker": 4
+    },
+    {
+      "Start": 80.1,
+      "End": 81.28,
+      "Speaker": 5
+    },
+    {
+      "Start": 81.87,
+      "End": 85.84,
+      "Speaker": 1
+    },
+    {
+      "Start": 85.68,
+      "End": 88.69,
+      "Speaker": 4
+    },
+    {
+      "Start": 89.11,
+      "End": 96.92,
+      "Speaker": 0
+    }
+  ],
+  "steps": [
+    {
+      "chunk_start": 0,
+      "chunk_frames": 340,
+      "L_before": 0,
+      "out_frames": 2720,
+      "ncf_after": 264,
+      "nff_after": 40
+    },
+    {
+      "chunk_start": 340,
+      "chunk_frames": 340,
+      "L_before": 304,
+      "out_frames": 2720,
+      "ncf_after": 264,
+      "nff_after": 40
+    },
+    {
+      "chunk_start": 680,
+      "chunk_frames": 340,
+      "L_before": 304,
+      "out_frames": 2720,
+      "ncf_after": 264,
+      "nff_after": 40
+    },
+    {
+      "chunk_start": 1020,
+      "chunk_frames": 201,
+      "L_before": 304,
+      "out_frames": 1608,
+      "ncf_after": 264,
+      "nff_after": 0
+    }
+  ]
+}
