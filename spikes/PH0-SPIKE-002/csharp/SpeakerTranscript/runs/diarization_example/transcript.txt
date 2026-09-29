@@ -1,0 +1,35 @@
+[Speaker 0] [00:00.360 - 00:09.310] To celebrate the release of Nemotron 3 Diarization, we invited seven more open text-to-speech voices to the party. I'm Chris, the Nemotron voice from NVIDIA.
+[Speaker 1] [00:09.170 - 00:13.820] Hi everybody, thanks for having me. I'm Jane, a Pocket Voice from Qtie.
+[Speaker 2] [00:13.550 - 00:18.320] Nice to meet you Chris and Jen. I'm Serena, the Queen 3 voice.
+[Speaker 3] [00:18.380 - 00:20.060] Hey, I'm Adam from Kokoro.
+[Speaker 3] [00:20.160 - 00:23.600] just 82 million parameters and I still made the guest list.
+[Speaker 4] [00:23.790 - 00:24.480] Hello, hello.
+[Speaker 4] [00:25.200 - 00:28.110] From Resemble AI, I brought the expressive energy.
+[Speaker 0] [00:27.800 - 00:28.800] I am John
+[Speaker 5] [00:28.800 - 00:32.690] a dear voice from Nari Labs. Great crowd we've got here already.
+[Speaker 3] [00:32.460 - 00:32.630] what
+[Speaker 3] [00:33.120 - 00:34.560] Great to be here.
+[Speaker 1] [00:36.440 - 00:36.720] [
+[Speaker 5] [00:37.440 - 00:38.470] from recipe
+[Speaker 5] [00:38.820 - 00:39.600] Okay, so...
+[Speaker 6] [00:40.320 - 00:45.409] a full house of eight synthetic open voices, let's put nimitron 3-dirization to the test.
+[Speaker 0] [00:45.909 - 00:53.180] Okay, so the new diorization model can tag each of our voices as it transcribes, but can it do that while we all speak together? Let's find out.
+[Speaker 3] [00:53.860 - 00:55.620] Even when two of us pocketed one.
+[Speaker 4] [00:54.280 - 00:57.350] Don't name both of us, even while we speak over each other.
+[Speaker 2] [00:57.300 - 01:00.670] frame by frame, it labels who spoke when.
+[Speaker 0] [01:01.270 - 01:06.970] Amazing. We can all talk at the same time, and Nemotron 3 diorization still separates every speaker.
+[Speaker 4] [01:07.670 - 01:08.740] Die is the king of the
+[Speaker 3] [01:07.680 - 01:09.630] Dies like a female speaking for it once.
+[Speaker 1] [01:08.080 - 01:08.860] Get on me!
+[Speaker 2] [01:08.400 - 01:09.120] We're not being
+[Speaker 0] [01:10.540 - 01:16.650] Okay, so even the old Nemo sort-former model could capture four, but eight? Now that's hard. Everyone, all together, go.
+[Speaker 0] [01:16.970 - 01:18.190] Here we go.
+[Speaker 1] [01:17.090 - 01:17.720] Here we go
+[Speaker 3] [01:17.760 - 01:18.680] every voice.
+[Speaker 4] [01:18.330 - 01:18.950] - Go,
+[Speaker 2] [01:19.020 - 01:20.050] I won't.
+[Speaker 4] [01:19.480 - 01:20.560] All in one room.
+[Speaker 6] [01:20.090 - 01:21.290] The Great 2
+[Speaker 1] [01:21.880 - 01:25.790] Wow, this was incredible! Let's assemble tomorrow and try it again.
+[Speaker 4] [01:25.680 - 01:28.690] I'd love to as well. Great meeting you all, but I've gotta run too
+[Speaker 0] [01:29.110 - 01:36.920] Sounds good. I've gotta run too. Eight open voices, one room, zero mixups. That's NemoTron 3 diarization. Stay open.

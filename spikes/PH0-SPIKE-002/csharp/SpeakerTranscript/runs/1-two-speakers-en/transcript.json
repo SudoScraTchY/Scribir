@@ -1,0 +1,86 @@
+{
+  "audio": "..\\..\\artifacts\\audio\\1-two-speakers-en.wav",
+  "sampleRate": 16000,
+  "diarizationMs": 3362,
+  "asrMs": 4448,
+  "usedTokenTimestamps": true,
+  "asrTokens": 41,
+  "diarization": [
+    {
+      "start": 1.44,
+      "end": 3.52,
+      "speaker": 0
+    },
+    {
+      "start": 4.38,
+      "end": 6.51,
+      "speaker": 0
+    },
+    {
+      "start": 9.33,
+      "end": 11.44,
+      "speaker": 1
+    },
+    {
+      "start": 12.17,
+      "end": 14.64,
+      "speaker": 1
+    }
+  ],
+  "utterances": [
+    {
+      "speaker": 0,
+      "start": 0,
+      "end": -2.9402756460091942E-27,
+      "text": "A"
+    },
+    {
+      "speaker": 0,
+      "start": 1.5399999618530273,
+      "end": 2.919999837875366,
+      "text": "pencil with black lead writes best"
+    },
+    {
+      "speaker": 0,
+      "start": 3.2799999713897705,
+      "end": 3.2799999713897705,
+      "text": "."
+    },
+    {
+      "speaker": 0,
+      "start": 3.6599998474121094,
+      "end": 3.6599998474121094,
+      "text": "The"
+    },
+    {
+      "speaker": 0,
+      "start": 4.480000019073486,
+      "end": 5.920000076293945,
+      "text": "lamp shone with a steady green flame"
+    },
+    {
+      "speaker": 0,
+      "start": 6.319999694824219,
+      "end": 6.319999694824219,
+      "text": "."
+    },
+    {
+      "speaker": 0,
+      "start": 7.199999809265137,
+      "end": 7.199999809265137,
+      "text": "Cl"
+    },
+    {
+      "speaker": 1,
+      "start": 9.460000038146973,
+      "end": 11.300000190734863,
+      "text": "othes and lodging are free to new men."
+    },
+    {
+      "speaker": 1,
+      "start": 12.179999351501465,
+      "end": 14.460000038146973,
+      "text": "The glow deepened in the eyes of the sweet girl."
+    }
+  ]
+}

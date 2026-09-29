@@ -1,0 +1,8 @@
+[PASS] gate1a mel(step00,center) vs ref: maxAbs=1.755E-004 (frames 104 vs 104)
+[PASS] gate1b mel(step40,no-center) vs ref: maxAbs=1.822E-004 (frames 104 vs 104)
+[PASS] gate2a embedder(step00) vs ref: maxAbs=9.811E-005 (E=13)
+[PASS] gate2b embedder(step40) vs ref: maxAbs=8.500E-005 (E=13)
+[PASS] gate3a cached_embeds replay (steps before first compression): worst maxAbs=1.446E-004 (tolerance 5e-4; torch float32 noise floor ~1.5e-4 measured)
+[PASS] gate3b cached_embeds replay (compressed steps): worst maxAbs=1.446E-004 (tolerance 5e-4; torch float32 noise floor ~1.5e-4 measured)
+[PASS] gate3c graph sliced logits vs fixture: worst maxAbs=0.000E+000
+[PASS] gate4 segments end-to-end vs python_segments.json: c#=8 python=8

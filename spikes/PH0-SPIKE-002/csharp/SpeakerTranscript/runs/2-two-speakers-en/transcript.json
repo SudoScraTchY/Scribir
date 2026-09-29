@@ -1,0 +1,166 @@
+{
+  "audio": "..\\..\\artifacts\\audio\\2-two-speakers-en.wav",
+  "sampleRate": 16000,
+  "diarizationMs": 13640,
+  "asrMs": 13447,
+  "usedTokenTimestamps": false,
+  "asrTokens": 125,
+  "diarization": [
+    {
+      "start": 0,
+      "end": 2.7,
+      "speaker": 0
+    },
+    {
+      "start": 2.76,
+      "end": 7.73,
+      "speaker": 1
+    },
+    {
+      "start": 7.86,
+      "end": 11.07,
+      "speaker": 0
+    },
+    {
+      "start": 11.29,
+      "end": 13.89,
+      "speaker": 1
+    },
+    {
+      "start": 14.03,
+      "end": 15.49,
+      "speaker": 0
+    },
+    {
+      "start": 16.23,
+      "end": 16.81,
+      "speaker": 0
+    },
+    {
+      "start": 17.2,
+      "end": 17.81,
+      "speaker": 1
+    },
+    {
+      "start": 17.86,
+      "end": 18.57,
+      "speaker": 0
+    },
+    {
+      "start": 18.56,
+      "end": 21.12,
+      "speaker": 1
+    },
+    {
+      "start": 21.14,
+      "end": 23.92,
+      "speaker": 0
+    },
+    {
+      "start": 24.41,
+      "end": 25.22,
+      "speaker": 1
+    },
+    {
+      "start": 25.24,
+      "end": 26.32,
+      "speaker": 1
+    },
+    {
+      "start": 25.26,
+      "end": 25.61,
+      "speaker": 0
+    },
+    {
+      "start": 26.33,
+      "end": 27.36,
+      "speaker": 0
+    }
+  ],
+  "utterances": [
+    {
+      "speaker": 0,
+      "start": 0,
+      "end": 2.7,
+      "text": "Yeah, and you worked on the original computer in this country, right?"
+    },
+    {
+      "speaker": 1,
+      "start": 2.76,
+      "end": 7.73,
+      "text": "I was very fortunate the Navy ordered me into the first big computer in the United States, Mark I at Harvard."
+    },
+    {
+      "speaker": 0,
+      "start": 7.86,
+      "end": 11.07,
+      "text": "It\u0027s called Mark 1 at Harvard. Now in those days, the thing was--"
+    },
+    {
+      "speaker": 1,
+      "start": 11.29,
+      "end": 13.89,
+      "text": "51 feet long, 8 feet high, and 8 feet deep."
+    },
+    {
+      "speaker": 0,
+      "start": 14.03,
+      "end": 15.49,
+      "text": "And that was the pocket model."
+    },
+    {
+      "speaker": 0,
+      "start": 16.23,
+      "end": 16.81,
+      "text": "That\u0027s me"
+    },
+    {
+      "speaker": 1,
+      "start": 17.2,
+      "end": 17.81,
+      "text": "That\u0027s right"
+    },
+    {
+      "speaker": 0,
+      "start": 17.86,
+      "end": 18.57,
+      "text": "Um..."
+    },
+    {
+      "speaker": 1,
+      "start": 18.56,
+      "end": 21.12,
+      "text": "You can put it on a little tiny corner of a chip now."
+    },
+    {
+      "speaker": 0,
+      "start": 21.14,
+      "end": 23.92,
+      "text": "Yeah. Now, how did you know so much about computers then?"
+    },
+    {
+      "speaker": 1,
+      "start": 24.41,
+      "end": 25.22,
+      "text": "I didn\u0027t."
+    },
+    {
+      "speaker": 1,
+      "start": 25.24,
+      "end": 26.32,
+      "text": "How does your first one?"
+    },
+    {
+      "speaker": 0,
+      "start": 25.26,
+      "end": 25.61,
+      "text": "(speaking"
+    },
+    {
+      "speaker": 0,
+      "start": 26.33,
+      "end": 27.36,
+      "text": "Yeah."
+    }
+  ]
+}

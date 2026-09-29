@@ -44,7 +44,7 @@ code.
 
 ### PH0-SPIKE-002 — End-to-end desktop proof of concept, one file, English
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH0-SPIKE-001
 **Related ADR(s):** ADR-0003, ADR-0004, ADR-0005
 
@@ -66,6 +66,8 @@ export formats, confidence scoring.
 
 **Suggested Verification:** Manual review of console output against the
 source audio by a human reviewer.
+
+**Completion note (2026-09-29):** Done. Deliverables: `spikes/PH0-SPIKE-002/` — C# console `SpeakerTranscript` (diarizer via raw ONNX Runtime using the ported pipeline from PH0-SPIKE-001 — all reference gates pass — plus Whisper-small int8 multilingual ASR via sherpa-onnx), printing `[Speaker N] [start-end] text` transcripts; four English files processed (two k2-fsa two-speaker conversation clips, the synthetic 2-speaker fixture, and NVIDIA’s 8-voice demo clip). Constraint found and handled: sherpa’s offline Whisper decodes <30 s per call and stock decoders carry no cross-attention outputs — long audio is transcribed per diarization turn (turns >28 s split); with an attention-enabled export, token-timestamp alignment also works (demonstrated). Evidence + analysis: `Agent-docs/findings/PH0-SPIKE-002.md`. A human listening pass remains recommended as the final manual review (objective cross-checks already pass: synthetic fixture turns recovered 8/8 with correct alternation).
 
 ---
 
@@ -100,6 +102,8 @@ community FastConformer Persian streaming model if available).
 acceptable for this spike); mobile performance (next task).
 
 **Suggested Verification:** Findings note + the populated matrix rows.
+
+**Readiness note (2026-09-29):** blocked on inputs — requires 3-5 real Persian multi-speaker recordings (none present in this repo) and the Persian ASR candidates; the PH0-SPIKE-002 console already accepts arbitrary files (`--audio`) and alternate model directories (`--whisper-dir`), so the extension work is small once recordings exist.
 
 ---
 
@@ -139,3 +143,5 @@ once live streaming exists).
 
 **Suggested Verification:** Findings note + populated matrix rows +
 explicit go/no-go statement on ADR-0006.
+
+**Readiness note (2026-09-29):** requires two physical Android devices (one modern NPU-capable tier, one low-end 3+ year old) — not available in this environment; instrumentation harness not yet built.

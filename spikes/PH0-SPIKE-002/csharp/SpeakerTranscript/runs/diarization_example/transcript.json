@@ -1,0 +1,407 @@
+{
+  "audio": "..\\..\\artifacts\\audio\\diarization_example.wav",
+  "sampleRate": 16000,
+  "diarizationMs": 60925,
+  "asrMs": 40935,
+  "usedTokenTimestamps": false,
+  "asrTokens": 415,
+  "diarization": [
+    {
+      "start": 0.36,
+      "end": 9.31,
+      "speaker": 0
+    },
+    {
+      "start": 9.17,
+      "end": 13.82,
+      "speaker": 1
+    },
+    {
+      "start": 13.55,
+      "end": 18.32,
+      "speaker": 2
+    },
+    {
+      "start": 18.38,
+      "end": 20.06,
+      "speaker": 3
+    },
+    {
+      "start": 20.16,
+      "end": 23.6,
+      "speaker": 3
+    },
+    {
+      "start": 23.79,
+      "end": 24.48,
+      "speaker": 4
+    },
+    {
+      "start": 25.2,
+      "end": 28.11,
+      "speaker": 4
+    },
+    {
+      "start": 27.8,
+      "end": 28.8,
+      "speaker": 0
+    },
+    {
+      "start": 28.8,
+      "end": 32.69,
+      "speaker": 5
+    },
+    {
+      "start": 32.46,
+      "end": 32.63,
+      "speaker": 3
+    },
+    {
+      "start": 32.66,
+      "end": 32.77,
+      "speaker": 3
+    },
+    {
+      "start": 32.8,
+      "end": 32.81,
+      "speaker": 3
+    },
+    {
+      "start": 33.12,
+      "end": 34.56,
+      "speaker": 3
+    },
+    {
+      "start": 36.44,
+      "end": 36.72,
+      "speaker": 1
+    },
+    {
+      "start": 37.44,
+      "end": 38.47,
+      "speaker": 5
+    },
+    {
+      "start": 38.82,
+      "end": 39.6,
+      "speaker": 5
+    },
+    {
+      "start": 40.32,
+      "end": 45.41,
+      "speaker": 6
+    },
+    {
+      "start": 45.91,
+      "end": 53.18,
+      "speaker": 0
+    },
+    {
+      "start": 53.86,
+      "end": 55.62,
+      "speaker": 3
+    },
+    {
+      "start": 54.28,
+      "end": 57.35,
+      "speaker": 4
+    },
+    {
+      "start": 57.3,
+      "end": 60.67,
+      "speaker": 2
+    },
+    {
+      "start": 61.27,
+      "end": 66.97,
+      "speaker": 0
+    },
+    {
+      "start": 67.67,
+      "end": 68.74,
+      "speaker": 4
+    },
+    {
+      "start": 67.68,
+      "end": 69.63,
+      "speaker": 3
+    },
+    {
+      "start": 68.08,
+      "end": 68.86,
+      "speaker": 1
+    },
+    {
+      "start": 68.4,
+      "end": 69.12,
+      "speaker": 2
+    },
+    {
+      "start": 70.54,
+      "end": 76.65,
+      "speaker": 0
+    },
+    {
+      "start": 76.97,
+      "end": 78.19,
+      "speaker": 0
+    },
+    {
+      "start": 77.09,
+      "end": 77.72,
+      "speaker": 1
+    },
+    {
+      "start": 77.76,
+      "end": 78.68,
+      "speaker": 3
+    },
+    {
+      "start": 78.33,
+      "end": 78.95,
+      "speaker": 4
+    },
+    {
+      "start": 79.02,
+      "end": 80.05,
+      "speaker": 2
+    },
+    {
+      "start": 79.48,
+      "end": 80.56,
+      "speaker": 4
+    },
+    {
+      "start": 80.09,
+      "end": 81.29,
+      "speaker": 6
+    },
+    {
+      "start": 81.88,
+      "end": 85.79,
+      "speaker": 1
+    },
+    {
+      "start": 85.68,
+      "end": 88.69,
+      "speaker": 4
+    },
+    {
+      "start": 89.11,
+      "end": 96.92,
+      "speaker": 0
+    }
+  ],
+  "utterances": [
+    {
+      "speaker": 0,
+      "start": 0.36,
+      "end": 9.31,
+      "text": "To celebrate the release of Nemotron 3 Diarization, we invited seven more open text-to-speech voices to the party. I\u0027m Chris, the Nemotron voice from NVIDIA."
+    },
+    {
+      "speaker": 1,
+      "start": 9.17,
+      "end": 13.82,
+      "text": "Hi everybody, thanks for having me. I\u0027m Jane, a Pocket Voice from Qtie."
+    },
+    {
+      "speaker": 2,
+      "start": 13.55,
+      "end": 18.32,
+      "text": "Nice to meet you Chris and Jen. I\u0027m Serena, the Queen 3 voice."
+    },
+    {
+      "speaker": 3,
+      "start": 18.38,
+      "end": 20.06,
+      "text": "Hey, I\u0027m Adam from Kokoro."
+    },
+    {
+      "speaker": 3,
+      "start": 20.16,
+      "end": 23.6,
+      "text": "just 82 million parameters and I still made the guest list."
+    },
+    {
+      "speaker": 4,
+      "start": 23.79,
+      "end": 24.48,
+      "text": "Hello, hello."
+    },
+    {
+      "speaker": 4,
+      "start": 25.2,
+      "end": 28.11,
+      "text": "From Resemble AI, I brought the expressive energy."
+    },
+    {
+      "speaker": 0,
+      "start": 27.8,
+      "end": 28.8,
+      "text": "I am John"
+    },
+    {
+      "speaker": 5,
+      "start": 28.8,
+      "end": 32.69,
+      "text": "a dear voice from Nari Labs. Great crowd we\u0027ve got here already."
+    },
+    {
+      "speaker": 3,
+      "start": 32.46,
+      "end": 32.63,
+      "text": "what"
+    },
+    {
+      "speaker": 3,
+      "start": 33.12,
+      "end": 34.56,
+      "text": "Great to be here."
+    },
+    {
+      "speaker": 1,
+      "start": 36.44,
+      "end": 36.72,
+      "text": "["
+    },
+    {
+      "speaker": 5,
+      "start": 37.44,
+      "end": 38.47,
+      "text": "from recipe"
+    },
+    {
+      "speaker": 5,
+      "start": 38.82,
+      "end": 39.6,
+      "text": "Okay, so..."
+    },
+    {
+      "speaker": 6,
+      "start": 40.32,
+      "end": 45.41,
+      "text": "a full house of eight synthetic open voices, let\u0027s put nimitron 3-dirization to the test."
+    },
+    {
+      "speaker": 0,
+      "start": 45.91,
+      "end": 53.18,
+      "text": "Okay, so the new diorization model can tag each of our voices as it transcribes, but can it do that while we all speak together? Let\u0027s find out."
+    },
+    {
+      "speaker": 3,
+      "start": 53.86,
+      "end": 55.62,
+      "text": "Even when two of us pocketed one."
+    },
+    {
+      "speaker": 4,
+      "start": 54.28,
+      "end": 57.35,
+      "text": "Don\u0027t name both of us, even while we speak over each other."
+    },
+    {
+      "speaker": 2,
+      "start": 57.3,
+      "end": 60.67,
+      "text": "frame by frame, it labels who spoke when."
+    },
+    {
+      "speaker": 0,
+      "start": 61.27,
+      "end": 66.97,
+      "text": "Amazing. We can all talk at the same time, and Nemotron 3 diorization still separates every speaker."
+    },
+    {
+      "speaker": 4,
+      "start": 67.67,
+      "end": 68.74,
+      "text": "Die is the king of the"
+    },
+    {
+      "speaker": 3,
+      "start": 67.68,
+      "end": 69.63,
+      "text": "Dies like a female speaking for it once."
+    },
+    {
+      "speaker": 1,
+      "start": 68.08,
+      "end": 68.86,
+      "text": "Get on me!"
+    },
+    {
+      "speaker": 2,
+      "start": 68.4,
+      "end": 69.12,
+      "text": "We\u0027re not being"
+    },
+    {
+      "speaker": 0,
+      "start": 70.54,
+      "end": 76.65,
+      "text": "Okay, so even the old Nemo sort-former model could capture four, but eight? Now that\u0027s hard. Everyone, all together, go."
+    },
+    {
+      "speaker": 0,
+      "start": 76.97,
+      "end": 78.19,
+      "text": "Here we go."
+    },
+    {
+      "speaker": 1,
+      "start": 77.09,
+      "end": 77.72,
+      "text": "Here we go"
+    },
+    {
+      "speaker": 3,
+      "start": 77.76,
+      "end": 78.68,
+      "text": "every voice."
+    },
+    {
+      "speaker": 4,
+      "start": 78.33,
+      "end": 78.95,
+      "text": "- Go,"
+    },
+    {
+      "speaker": 2,
+      "start": 79.02,
+      "end": 80.05,
+      "text": "I won\u0027t."
+    },
+    {
+      "speaker": 4,
+      "start": 79.48,
+      "end": 80.56,
+      "text": "All in one room."
+    },
+    {
+      "speaker": 6,
+      "start": 80.09,
+      "end": 81.29,
+      "text": "The Great 2"
+    },
+    {
+      "speaker": 1,
+      "start": 81.88,
+      "end": 85.79,
+      "text": "Wow, this was incredible! Let\u0027s assemble tomorrow and try it again."
+    },
+    {
+      "speaker": 4,
+      "start": 85.68,
+      "end": 88.69,
+      "text": "I\u0027d love to as well. Great meeting you all, but I\u0027ve gotta run too"
+    },
+    {
+      "speaker": 0,
+      "start": 89.11,
+      "end": 96.92,
+      "text": "Sounds good. I\u0027ve gotta run too. Eight open voices, one room, zero mixups. That\u0027s NemoTron 3 diarization. Stay open."
+    }
+  ]
+}
