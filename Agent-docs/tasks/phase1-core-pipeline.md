@@ -8,7 +8,7 @@ depend, directly or indirectly, on Phase 0 findings.
 
 ### PH1-CORE-001 — Define Scriber.Core domain models
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** None (may start once Phase 0 is substantially complete)
 **Related ADR(s):** None directly
 
@@ -40,11 +40,19 @@ inference logic.
 
 **Suggested Verification:** Unit tests in `Scriber.Core.Tests`.
 
+**Completion note (2026-10-06):** Done. `src/Scriber.Core` — Transcript, Speaker, Segment,
+Word, AudioReference (classic records with validating constructors; the task's positional-record
+contract shape preserved: same construction signatures, `with` support, value equality) plus
+`AudioBuffer` (interleaved float32 PCM, the shared currency of every pipeline stage). Enforced
+invariants: Segment words inside [Start, End] and chronological; End > Start; Word confidence in
+[0,1]; Speaker.ColorHex #RRGGBB; every Segment.SpeakerId resolves to a declared Speaker.
+Verified: `dotnet test src/Scriber.Core.Tests` — 12/12 passed.
+
 ---
 
 ### PH1-CORE-002 — Audio import & decode to normalized PCM
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-001
 **Related ADR(s):** None directly
 
@@ -64,8 +72,17 @@ normalized 16kHz mono PCM buffer that every downstream model expects.
 **Out of Scope:** VAD (next task), any UI file-picker (see
 `phase1-ui-shell.md`).
 
-**Suggested Verification:** Unit tests with fixture audio files of each
-supported format.
+**Suggested Verification:** Unit tests with fixture audio files of each supported format.
+
+**Completion note (2026-10-06):** Done. `src/Scriber.Pipeline/Import` — `IAudioDecoder`
+(`Task<AudioBuffer> DecodeAsync(string, CancellationToken)`) with `FfmpegAudioDecoder` (local
+ffmpeg, resolved via SCRIBER_FFMPEG env var then PATH; outputs 16 kHz mono f32le → `AudioBuffer`;
+clear `AudioDecodeException` for corrupt/unsupported/no-audio-stream inputs, including ffmpeg's
+"does not contain any stream" case normalized to plain language). Committed fixtures: tone.wav,
+tone.mp3, tone.m4a, tone.mp4 (1.0 s 1 kHz sine @ 1/8 amp + 0.5 s silence, 16 kHz mono —
+measured decode RMS ≈ 0.088 in-tone, 0.0 in pad), videoonly.mp4, notes.txt.
+Verified: `dotnet test src/Scriber.Pipeline.Tests` — 8/8 passed (all 4 formats, level checks,
+corrupt/unsupported/video-only rejection).
 
 ---
 

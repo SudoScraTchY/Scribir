@@ -1,0 +1,1 @@
+Scriber pipeline test fixtures. tone.* = 1.0 s of 1 kHz sine at 16 kHz mono + 0.5 s silence pad.
