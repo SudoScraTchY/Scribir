@@ -11,4 +11,8 @@
     <ProjectReference Include="..\Scriber.Core\Scriber.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.8" />
+  </ItemGroup>
+
 </Project>
