@@ -168,7 +168,8 @@ public sealed class SherpaWhisperAsrBackend : IAsrBackend, IDisposable
 
                 double t = (timestamps != null && i < timestamps.Length) ? timestamps[i] : -1;
                 double d = (durations != null && i < durations.Length) ? durations[i] : 0.25;
-                if (d <= 0) d = 0.25;
+                if (double.IsNaN(t) || double.IsInfinity(t) || t < 0 || t > 3600) t = -1;
+                if (double.IsNaN(d) || double.IsInfinity(d) || d <= 0 || d > 3600) d = 0.25;
 
                 bool startsWord = tok.Length > 0 && (char.IsWhiteSpace(tok[0]) || tok.StartsWith("Ġ") || currentTokens.Count == 0);
 
@@ -223,6 +224,12 @@ public sealed class SherpaWhisperAsrBackend : IAsrBackend, IDisposable
         if (string.IsNullOrEmpty(raw))
             return;
 
+        double totalWinSec = (winEnd - winStart).TotalSeconds;
+        if (double.IsNaN(startSec) || double.IsInfinity(startSec) || startSec < 0 || startSec > totalWinSec)
+            startSec = -1;
+        if (double.IsNaN(endSec) || double.IsInfinity(endSec) || endSec < 0 || endSec > totalWinSec)
+            endSec = -1;
+
         TimeSpan wStart = startSec >= 0 ? winStart + TimeSpan.FromSeconds(startSec) : winStart;
         TimeSpan wEnd = endSec >= 0 ? winStart + TimeSpan.FromSeconds(endSec) : wStart + TimeSpan.FromMilliseconds(200);
 
@@ -238,6 +245,9 @@ public sealed class SherpaWhisperAsrBackend : IAsrBackend, IDisposable
             if (wEnd <= wStart)
                 wEnd = wStart + TimeSpan.FromMilliseconds(50);
         }
+
+        if (wEnd > winEnd)
+            wEnd = winEnd;
 
         words.Add(new Word(raw, wStart, wEnd, 0.90));
     }

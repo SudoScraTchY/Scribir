@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Scriber.App/Scriber.App.csproj" />
     <Project Path="src/Scriber.Core.Tests/Scriber.Core.Tests.csproj" />
     <Project Path="src/Scriber.Core/Scriber.Core.csproj" />
     <Project Path="src/Scriber.Export.Tests/Scriber.Export.Tests.csproj" />

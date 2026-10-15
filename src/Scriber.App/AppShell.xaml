@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Scriber.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Scriber.App.Views"
+    Title="Scribir">
+
+    <TabBar>
+        <Tab Title="Transcribe" Route="transcribe">
+            <ShellContent ContentTemplate="{DataTemplate views:TranscribePage}" />
+        </Tab>
+
+        <Tab Title="Library" Route="library">
+            <ShellContent ContentTemplate="{DataTemplate views:LibraryPage}" />
+        </Tab>
+
+        <Tab Title="Settings" Route="settings">
+            <ShellContent ContentTemplate="{DataTemplate views:SettingsPage}" />
+        </Tab>
+    </TabBar>
+
+</Shell>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             x:Class="Scriber.App.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="Settings">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="24" MaximumWidthRequest="700" HorizontalOptions="Center">
+            
+            <Label Text="Settings &amp; Info" FontSize="24" FontAttributes="Bold" />
+
+            <!-- About Card -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="About Scribir" FontSize="16" FontAttributes="Bold" />
+                    <Label Text="{Binding ArchitectureNotes}" FontSize="13" TextColor="#6B7280" />
+                    <Grid ColumnDefinitions="*, Auto" Margin="0,8,0,0">
+                        <Label Grid.Column="0" Text="Version" FontSize="13" />
+                        <Label Grid.Column="1" Text="{Binding Version}" FontSize="13" FontAttributes="Bold" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Storage & Paths Card -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Local Storage &amp; Paths" FontSize="16" FontAttributes="Bold" />
+                    
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Database Location" FontSize="12" TextColor="#6B7280" />
+                        <Label Text="{Binding DatabasePath}" FontSize="13" FontAttributes="Bold" LineBreakMode="CharacterWrap" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4" Margin="0,8,0,0">
+                        <Label Text="Models Cache Directory" FontSize="12" TextColor="#6B7280" />
+                        <Label Text="{Binding CacheDirectory}" FontSize="13" FontAttributes="Bold" LineBreakMode="CharacterWrap" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

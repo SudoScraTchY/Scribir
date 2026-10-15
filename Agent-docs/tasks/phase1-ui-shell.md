@@ -4,7 +4,8 @@
 
 ### PH1-UI-001 — App shell navigation
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** None (can start in parallel with core-pipeline tasks)
 **Related ADR(s):** ADR-0001, ADR-0002
 
@@ -28,7 +29,8 @@ platforms.
 
 ### PH1-UI-002 — Import & transcribe flow screen
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH1-UI-001, PH1-CORE-006, PH1-STORE-001
 **Related ADR(s):** None directly
 
@@ -56,7 +58,8 @@ a real audio file.
 
 ### PH1-UI-003 — Transcript view
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH1-UI-002
 **Related ADR(s):** None directly
 
@@ -115,7 +118,8 @@ low/mid-range Android device, not only on desktop or a high-end phone.
 
 ### PH1-UI-005 — Speaker renaming and retroactive relabeling
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH1-UI-003
 **Related ADR(s):** None directly
 
@@ -199,13 +203,14 @@ transcript — a differentiator no surveyed competing tool has.
 is purely about surfacing, not auto-correcting.
 
 **Suggested Verification:** Manual test with a fixture transcript
-containing a deliberate range of confidence values.
+container a deliberate range of confidence values.
 
 ---
 
 ### PH1-UI-008 — Library/search screen
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH1-STORE-001
 **Related ADR(s):** None directly
 

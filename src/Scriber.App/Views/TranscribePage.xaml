@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             x:Class="Scriber.App.Views.TranscribePage"
+             x:DataType="vm:TranscribeViewModel"
+             Title="Transcribe">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="24" Padding="24" MaximumWidthRequest="700" HorizontalOptions="Center">
+            
+            <!-- Header -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="New Transcription" FontSize="26" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}" />
+                <Label Text="Import a recording to generate speaker-attributed transcripts on-device." FontSize="14" TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+            </VerticalStackLayout>
+
+            <!-- File Selection Card -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Source Recording" FontSize="16" FontAttributes="Bold" />
+                    
+                    <Border StrokeThickness="1" StrokeDashArray="4,4" Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#4B5563}" BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}" Padding="16">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Label Text="{Binding SelectedFileName}" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                            <Label Text="Supported: MP3, WAV, M4A, MP4" FontSize="12" TextColor="#6B7280" HorizontalTextAlignment="Center" />
+                            <Button Text="Browse Audio / Video" Command="{Binding PickFileCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" HorizontalOptions="Center" Margin="0,8,0,0" />
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Configuration Card -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Options" FontSize="16" FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="16">
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="Language" FontSize="13" TextColor="#6B7280" />
+                            <Picker ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="Speakers" FontSize="13" TextColor="#6B7280" />
+                            <Picker ItemsSource="{Binding SpeakerCountOptions}" SelectedItem="{Binding SelectedSpeakerCount}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Button Text="Start Transcription" Command="{Binding TranscribeCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" FontAttributes="Bold" HeightRequest="48" Margin="0,12,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Progress Card -->
+            <Border IsVisible="{Binding IsProcessing}" StrokeThickness="1" Stroke="#3B82F6" BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E3A8A}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Grid.Column="0" Text="{Binding ProgressStage, StringFormat='Stage: {0}'}" FontAttributes="Bold" TextColor="#2563EB" />
+                        <Label Grid.Column="1" Text="{Binding ProgressFraction, StringFormat='{0:P0}'}" FontAttributes="Bold" TextColor="#2563EB" />
+                    </Grid>
+
+                    <ProgressBar Progress="{Binding ProgressFraction}" ProgressColor="#2563EB" />
+                    <Label Text="{Binding StatusMessage}" FontSize="13" TextColor="{AppThemeBinding Light=#4B5563, Dark=#D1D5DB}" />
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

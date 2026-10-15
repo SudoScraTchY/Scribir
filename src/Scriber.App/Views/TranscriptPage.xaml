@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             xmlns:domain="clr-namespace:Scriber.Core.Domain;assembly=Scriber.Core"
+             x:Class="Scriber.App.Views.TranscriptPage"
+             x:DataType="vm:TranscriptViewModel"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto">
+        
+        <!-- Top Toolbar -->
+        <Border Grid.Row="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
+            <Grid ColumnDefinitions="*, Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                    <Label Text="{Binding DurationFormatted, StringFormat='Duration: {0}'}" FontSize="12" TextColor="#6B7280" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="Export..." Command="{Binding ExportCommand}" FontSize="13" Padding="12,6" />
+            </Grid>
+        </Border>
+
+        <!-- Speakers Legend -->
+        <Border Grid.Row="1" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}" Padding="16,8">
+            <HorizontalStackLayout Spacing="16">
+                <Label Text="Speakers:" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
+                <CollectionView ItemsSource="{Binding Speakers}" ItemsLayout="HorizontalList">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="domain:Speaker">
+                            <Border StrokeThickness="0" BackgroundColor="{Binding ColorHex, Converter={StaticResource ColorHexConverter}}" Padding="8,4" Margin="4,0">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="6" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=RenameSpeakerCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Label Text="{Binding DisplayName}" TextColor="White" FontSize="12" FontAttributes="Bold" />
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Transcript Segments List -->
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Segments}" SelectionMode="Single" SelectedItem="{Binding SelectedSegment}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:SegmentItemViewModel">
+                    <Border StrokeThickness="1"
+                            Stroke="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='#3B82F6'}"
+                            BackgroundColor="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='#EFF6FF'}"
+                            Margin="12,4" Padding="12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=SeekToSegmentCommand}" CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="6">
+                            
+                            <!-- Segment Header -->
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="{Binding SpeakerColorHex, Converter={StaticResource ColorHexConverter}}" Padding="6,2">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="4" />
+                                    </Border.StrokeShape>
+                                    <Label Text="{Binding SpeakerName}" TextColor="White" FontSize="11" FontAttributes="Bold" />
+                                </Border>
+
+                                <Label Grid.Column="1" Text="{Binding TimeString}" FontSize="12" TextColor="#6B7280" Margin="8,0,0,0" VerticalOptions="Center" />
+                                <Button Grid.Column="2" Text="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='Edit'}"
+                                        Command="{Binding ToggleEditCommand}"
+                                        FontSize="11" Padding="6,2" HeightRequest="28" BackgroundColor="Transparent" TextColor="#2563EB" />
+                            </Grid>
+
+                            <!-- Read-only Text -->
+                            <Label Text="{Binding Text}" FontSize="14" LineBreakMode="WordWrap" TextColor="{AppThemeBinding Light=#1F2937, Dark=#F3F4F6}"
+                                   IsVisible="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}}" />
+
+                            <!-- Edit Mode Input -->
+                            <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="6">
+                                <Editor Text="{Binding EditText}" AutoSize="TextChanges" FontSize="14" />
+                                <HorizontalStackLayout Spacing="8" HorizontalOptions="End">
+                                    <Button Text="Cancel" Command="{Binding ToggleEditCommand}" FontSize="12" HeightRequest="32" BackgroundColor="#E5E7EB" TextColor="#374151" />
+                                    <Button Text="Save"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=SaveEditCommand}"
+                                            CommandParameter="{Binding .}"
+                                            FontSize="12" HeightRequest="32" BackgroundColor="#2563EB" TextColor="White" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Playback Controller Bar -->
+        <Border Grid.Row="3" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                
+                <!-- Play/Pause Button -->
+                <Button Grid.Column="0" Text="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='Play'}"
+                        Command="{Binding PlayPauseCommand}"
+                        FontAttributes="Bold" WidthRequest="70" HeightRequest="40" BackgroundColor="#2563EB" TextColor="White" />
+
+                <!-- Scrubber Slider & Timestamps -->
+                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                    <Slider Minimum="0.0" Maximum="1.0" Value="{Binding PlaybackProgress}" MinimumTrackColor="#2563EB" />
+                    <Grid ColumnDefinitions="*, *">
+                        <Label Grid.Column="0" Text="{Binding CurrentPositionText}" FontSize="11" TextColor="#6B7280" />
+                        <Label Grid.Column="1" Text="{Binding DurationText}" FontSize="11" TextColor="#6B7280" HorizontalTextAlignment="End" />
+                    </Grid>
+                </VerticalStackLayout>
+
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>
