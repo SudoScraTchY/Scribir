@@ -2,6 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/Scriber.Core.Tests/Scriber.Core.Tests.csproj" />
     <Project Path="src/Scriber.Core/Scriber.Core.csproj" />
+    <Project Path="src/Scriber.Inference.Asr.Tests/Scriber.Inference.Asr.Tests.csproj" />
+    <Project Path="src/Scriber.Inference.Asr/Scriber.Inference.Asr.csproj" />
+    <Project Path="src/Scriber.Inference.Diarization.Tests/Scriber.Inference.Diarization.Tests.csproj" />
+    <Project Path="src/Scriber.Inference.Diarization/Scriber.Inference.Diarization.csproj" />
     <Project Path="src/Scriber.Pipeline.Tests/Scriber.Pipeline.Tests.csproj" />
     <Project Path="src/Scriber.Pipeline/Scriber.Pipeline.csproj" />
   </Folder>

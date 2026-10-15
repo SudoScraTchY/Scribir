@@ -73,7 +73,7 @@ source audio by a human reviewer.
 
 ### PH0-SPIKE-003 — Persian audio validation pass (spike)
 
-**Status:** Not Started
+**Status:** Blocked
 **Depends On:** PH0-SPIKE-002
 **Related ADR(s):** ADR-0004, ADR-0005
 
@@ -105,11 +105,13 @@ acceptable for this spike); mobile performance (next task).
 
 **Readiness note (2026-09-29):** blocked on inputs — requires 3-5 real Persian multi-speaker recordings (none present in this repo) and the Persian ASR candidates; the PH0-SPIKE-002 console already accepts arbitrary files (`--audio`) and alternate model directories (`--whisper-dir`), so the extension work is small once recordings exist.
 
+**Hold note (2026-10-15):** Put on hold per maintainer decision (maintainer cannot personally test Persian audio); Phase 1 proceeds unblocked.
+
 ---
 
 ### PH0-SPIKE-004 — On-device mobile feasibility benchmark, Android (spike)
 
-**Status:** Not Started
+**Status:** Blocked
 **Depends On:** PH0-SPIKE-002
 **Related ADR(s):** ADR-0006, ADR-0011
 
@@ -145,3 +147,5 @@ once live streaming exists).
 explicit go/no-go statement on ADR-0006.
 
 **Readiness note (2026-09-29):** requires two physical Android devices (one modern NPU-capable tier, one low-end 3+ year old) — not available in this environment; instrumentation harness not yet built.
+
+**Deferral note (2026-10-15):** Deferred to a much later date per maintainer decision; Phase 1 core engineering proceeds on desktop first.

@@ -88,7 +88,7 @@ corrupt/unsupported/video-only rejection).
 
 ### PH1-CORE-003 — VAD pre-pass integration
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-002
 **Related ADR(s):** ADR-0003
 
@@ -109,11 +109,18 @@ PH0-SPIKE-001's runtime findings).
 **Suggested Verification:** Unit test asserting returned segment
 boundaries against a known-good fixture.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Pipeline/Vad` — `IVad`, `SherpaVad`,
+`VadOptions`, and `SpeechRange` wrapping sherpa-onnx Silero VAD (v5). Audio is fed in
+`WindowSize` chunks (512 samples / 32 ms) so sherpa evaluates speech independently per
+window rather than or-ing speech across large buffers. Verified on `two_speaker_fixture.wav`
+(8/8 speech turns recovered, 0.5 s silence gaps excluded), `silence.wav` (0 ranges), and
+sample rate / channel validation. `dotnet test src/Scriber.Pipeline.Tests` — 13/13 passed.
+
 ---
 
 ### PH1-CORE-004 — Diarization integration
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-003, PH0-SPIKE-001, PH0-SPIKE-002
 **Related ADR(s):** ADR-0003, ADR-0004
 
@@ -146,11 +153,19 @@ public record SpeakerTurn(string SpeakerId, TimeSpan Start, TimeSpan End);
 fixture audio, asserting turn count and rough boundaries within a defined
 tolerance.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Inference.Diarization` — `IDiarizer`,
+`NemotronDiarizer`, `DiarizationOptions`, `SpeakerTurn` implementing on-device diarization
+via raw `Microsoft.ML.OnnxRuntime` (`nemotron3_stream_step.onnx`) with native Mel frontend,
+feature-stacking `Embedder`, and host-side speaker FIFO cache (`SpeakerCache`) ported from
+spike 002. Tested on `two_speaker_fixture.wav` (recovers 8/8 turns, stable appearance-ordered
+speaker IDs `speaker-0` / `speaker-1`, turn durations $\ge 3\text{ s}$, matching spike 002
+boundaries within 0.25 s tolerance). `dotnet test src/Scriber.Inference.Diarization.Tests` — 6/6 passed.
+
 ---
 
 ### PH1-CORE-005 — Define IAsrBackend and first concrete backend
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-002, PH0-SPIKE-002
 **Related ADR(s):** ADR-0005
 
@@ -183,11 +198,21 @@ implementation body (stub acceptable here, real implementation in
 fixtures, asserting non-empty, plausible transcript output with
 confidence values in `[0,1]`.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Inference.Asr` — `IAsrBackend`
+(exact signature per ADR-0005: `Id`, `DisplayName`, `SupportedLanguageCodes`, `SupportsStreaming`,
+`TranscribeAsync`, `TranscribeStreamingAsync`), `TranscriptSegment`, `PartialTranscriptSegment`,
+`AudioChunk`, and `AsrOptions`. `SherpaWhisperAsrBackend` wraps multilingual Whisper-small INT8 via
+`sherpa-onnx` (`small-encoder.int8.onnx`, `small-decoder.int8.onnx`, `small-tokens.txt`), with audio windowing
+for cuts $> 28\text{ s}$ and word-level timestamp/confidence extraction. `SupportsStreaming` accurately reports
+`false` (throws `NotSupportedException` on streaming call). Verified against `two_speaker_fixture.wav`:
+extracts words with chronological order, confidence in $[0, 1]$, and recognized ground-truth vocabulary.
+`dotnet test src/Scriber.Inference.Asr.Tests` — 6/6 passed.
+
 ---
 
 ### PH1-CORE-006 — Alignment / merge pass
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-004, PH1-CORE-005
 **Related ADR(s):** ADR-0004, ADR-0005
 
@@ -217,11 +242,21 @@ separate task if pursued later.
 
 **Suggested Verification:** Unit tests as described above.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Pipeline/Alignment` — `ITranscriptAligner`
+and `TranscriptAligner` attributing words to `SpeakerTurn`s by maximum time overlap.
+Boundary words spanning turns use majority duration overlap (which implements midpoint split for
+adjacent turns). For overlapping speech, when turns share overlap with a word, the turn with greatest
+overlap duration wins, and ties are broken in favor of the earlier-starting (dominant/first) turn;
+this is an explicit documented v1 simplification called out in code and here. Verified: unit tests in
+`Scriber.Pipeline.Tests.AlignmentTests` covering simple boundary cases, boundary-crossing words,
+overlapping-speech ties/dominance, silence gaps, and `TranscriptSegment` domain invariants.
+`dotnet test src/Scriber.Pipeline.Tests` — 20/20 passed.
+
 ---
 
 ### PH1-CORE-007 — Persian-aware text normalization pass
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-006
 **Related ADR(s):** ADR-0005
 
@@ -244,3 +279,11 @@ corrupting Persian-specific text features.
 **Suggested Verification:** Unit tests with Persian fixture strings
 containing ZWNJ-joined compounds, mixed numeral styles, and standard
 punctuation.
+
+**Completion note (2026-10-15):** Done. `src/Scriber.Pipeline/Normalization` — `ITextNormalizer`,
+`PersianTextNormalizer`, `NormalizationOptions`, `NumeralStyle`. Preserves ZWNJ (`\u200C`) in Persian
+compounds (می‌خواهم, خانه‌ها, کتاب‌هایم, رفته‌اند) without truncation or stripping; standardizes
+Arabic Yeh/Kaf to standard Persian ی / ک; provides configurable `NumeralStyle` (Persian `۰-۹`, Latin `0-9`,
+Unchanged); cleans whitespace around punctuation (،, ؟, ؛, ., !) without altering word content,
+start/end timestamps, or confidence scores. Unit tests in `Scriber.Pipeline.Tests.NormalizationTests`
+verified all invariants. `dotnet test src/Scriber.Pipeline.Tests` — 28/28 passed.

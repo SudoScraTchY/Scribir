@@ -2,6 +2,7 @@
 [Bb]in/
 [Oo]bj/
 *.user
+.vs/
 
 # Spike caches and downloaded artifacts (never commit model weights)
 .cache/
