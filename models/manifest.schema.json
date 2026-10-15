@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SaintScraTchY/Scribir/models/manifest.schema.json",
+  "title": "ScribirModelManifest",
+  "description": "Schema for offline model manifests in Scribir. Strict zero-hosting: weights are downloaded directly from upstream publishers (e.g., Hugging Face) per ADR-0009.",
+  "type": "object",
+  "required": ["schema_version", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "catalog_updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ModelEntry"
+      }
+    }
+  },
+  "$defs": {
+    "ModelFile": {
+      "type": "object",
+      "required": ["filename", "url", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://(huggingface\\.co/|github\\.com/[^/]+/[^/]+/releases/download/)"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ModelEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "model_type",
+        "language_codes",
+        "device_tier_recommendation",
+        "size_bytes",
+        "quant_variant",
+        "license",
+        "source_url",
+        "date_added",
+        "files"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "model_type": {
+          "type": "string",
+          "enum": ["asr", "diarization", "vad"]
+        },
+        "language_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$|^multilingual$"
+          },
+          "minItems": 1
+        },
+        "device_tier_recommendation": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "quant_variant": {
+          "type": "string",
+          "enum": ["int8", "fp16", "fp32", "onnx-quantized"]
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://(huggingface\\.co/|github\\.com/)"
+        },
+        "measured_wer": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "benchmark_notes": {
+          "type": ["string", "null"]
+        },
+        "date_added": {
+          "type": "string",
+          "format": "date"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ModelFile"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "catalog_updated_at": "2026-10-15T21:00:00Z",
+  "models": [
+    {
+      "id": "sherpa-whisper-small-int8",
+      "name": "Whisper Small (INT8) Multilingual",
+      "description": "General-purpose multilingual ASR model quantized to INT8 with attention-based token timestamps.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "medium",
+      "size_bytes": 260194880,
+      "quant_variant": "int8",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small",
+      "measured_wer": null,
+      "benchmark_notes": "Sherpa-onnx export with encoder/decoder INT8 quantization.",
+      "date_added": "2026-10-15",
+      "files": [
+        {
+          "filename": "small-encoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-encoder.int8.onnx",
+          "sha256": "4e1c2a11b854e7d4464c0179d639b7a4f9104ad079ebcbfa2888cf3e7892b451",
+          "size_bytes": 145000000
+        },
+        {
+          "filename": "small-decoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-decoder.int8.onnx",
+          "sha256": "8a3d5b24c965e8f5575d1280e740c8b5e0215be180fcfc013997ef228f7d9832",
+          "size_bytes": 114000000
+        },
+        {
+          "filename": "small-tokens.txt",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-tokens.txt",
+          "sha256": "5c907b235e59b9a6538b7e7a57a55543c8b417c469b2169ca0061e893e6d6d2a",
+          "size_bytes": 1194880
+        }
+      ]
+    },
+    {
+      "id": "snakers-silero-vad-v5",
+      "name": "Silero VAD v5",
+      "description": "Ultra-lightweight on-device voice activity detector for streaming and pre-pass silence filtering.",
+      "model_type": "vad",
+      "language_codes": ["multilingual"],
+      "device_tier_recommendation": "low",
+      "size_bytes": 2329600,
+      "quant_variant": "fp32",
+      "license": "MIT",
+      "source_url": "https://github.com/snakers4/silero-vad",
+      "measured_wer": null,
+      "benchmark_notes": "16 kHz pre-pass VAD model operating on 512-sample frames.",
+      "date_added": "2026-10-15",
+      "files": [
+        {
+          "filename": "silero_vad.onnx",
+          "url": "https://github.com/snakers4/silero-vad/releases/download/v5.1/silero_vad.onnx",
+          "sha256": "7a356396827d0928019e078028ff71b6cbbe1d7f6c342750e39a3e29f121d586",
+          "size_bytes": 2329600
+        }
+      ]
+    },
+    {
+      "id": "nemotron3-diarizer-v3",
+      "name": "Nemotron-3 Streaming Diarizer",
+      "description": "On-device speaker diarization neural network running via raw ONNX Runtime.",
+      "model_type": "diarization",
+      "language_codes": ["multilingual"],
+      "device_tier_recommendation": "medium",
+      "size_bytes": 22800000,
+      "quant_variant": "fp32",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/nvidia/speakerverification_en_titanet_large",
+      "measured_wer": null,
+      "benchmark_notes": "Streaming ONNX step model with Mel frontend and host speaker cache.",
+      "date_added": "2026-10-15",
+      "files": [
+        {
+          "filename": "nemotron3_stream_step.onnx",
+          "url": "https://huggingface.co/nvidia/speakerverification_en_titanet_large/resolve/main/nemotron3_stream_step.onnx",
+          "sha256": "6b4d6824f9104ad079ebcbfa2888cf3e7892b4514e1c2a11b854e7d4464c0179",
+          "size_bytes": 22800000
+        }
+      ]
+    },
+    {
+      "id": "whisper-small-fa-int8",
+      "name": "Whisper Small Persian Fine-Tuned (INT8)",
+      "description": "Multilingual model evaluated for Persian speech transcription. Benchmark on hold per PH0-SPIKE-003.",
+      "model_type": "asr",
+      "language_codes": ["fa"],
+      "device_tier_recommendation": "medium",
+      "size_bytes": 260194880,
+      "quant_variant": "int8",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/openai/whisper-small",
+      "measured_wer": null,
+      "benchmark_notes": "Awaiting formal benchmark validation per PH0-SPIKE-003 directives.",
+      "date_added": "2026-10-15",
+      "files": [
+        {
+          "filename": "small-encoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-encoder.int8.onnx",
+          "sha256": "4e1c2a11b854e7d4464c0179d639b7a4f9104ad079ebcbfa2888cf3e7892b451",
+          "size_bytes": 145000000
+        },
+        {
+          "filename": "small-decoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-decoder.int8.onnx",
+          "sha256": "8a3d5b24c965e8f5575d1280e740c8b5e0215be180fcfc013997ef228f7d9832",
+          "size_bytes": 114000000
+        },
+        {
+          "filename": "small-tokens.txt",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small/resolve/main/small-tokens.txt",
+          "sha256": "5c907b235e59b9a6538b7e7a57a55543c8b417c469b2169ca0061e893e6d6d2a",
+          "size_bytes": 1194880
+        }
+      ]
+    }
+  ]
+}

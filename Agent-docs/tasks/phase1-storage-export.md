@@ -4,7 +4,7 @@
 
 ### PH1-STORE-001 — SQLite schema & repository for Transcript/Speaker/Segment
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-001
 **Related ADR(s):** None directly
 
@@ -26,11 +26,20 @@ transcript content.
 **Suggested Verification:** Unit/integration tests covering CRUD and a
 representative full-text search query.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Storage` — `ITranscriptRepository`,
+`SqliteTranscriptRepository`, `TranscriptSummary`, `SearchResult`, `ISchemaMigration`,
+`Migration_001_InitialSchema`, `DatabaseMigrator`. Schema defines `transcripts`, `speakers`,
+`segments`, and `words` with foreign key cascades and indexes, plus `transcript_fts` using
+SQLite FTS5 (`unicode61` tokenizer) for full-text search. Supports full CRUD, listing summaries,
+FTS5 prefix/exact matching with snippet generation (`<b>...</b>`), and idempotent migrations.
+Verified with in-memory SQLite integration tests in `Scriber.Storage.Tests`.
+`dotnet test src/Scriber.Storage.Tests` — 6/6 passed.
+
 ---
 
 ### PH1-STORE-002 — Local model cache manager
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** None directly (parallel to core-pipeline tasks)
 **Related ADR(s):** ADR-0009
 
@@ -57,6 +66,14 @@ proxying weights through project infrastructure.
 **Suggested Verification:** Integration test against a small real (or
 locally-served fixture) model file, covering download, checksum success,
 checksum failure, and deletion.
+
+**Completion note (2026-10-15):** Done. `src/Scriber.Storage/Models` — `IModelCacheManager`,
+`LocalModelCacheManager`, `ModelStatus`, `ModelCacheState`. Directly streams downloads from
+upstream URLs (Hugging Face / GitHub) into `.tmp` files, calculates SHA-256 on the fly, and
+verifies hash matches manifest before atomic rename to target. Failed checksum triggers immediate
+cleanup, surfaces `ModelCacheState.Failed`, and rejects cache entry per ADR-0009. Full state
+transitions (`NotDownloaded` -> `Downloading` -> `Ready` -> `NotDownloaded` on delete) tested in
+`Scriber.Storage.Tests.LocalModelCacheManagerTests` (13/13 passed).
 
 ---
 
@@ -93,7 +110,7 @@ and on, including the raw-file-unreadable check.
 
 ### PH1-EXPORT-001 — TXT, SRT, VTT, JSON exporters
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-006
 **Related ADR(s):** None directly
 
@@ -117,11 +134,20 @@ table stakes, not a differentiator, but required.
 SRT/VTT file back with a standard library and confirm cue count/timing
 matches the source segments; validate the JSON against its own schema.
 
+**Completion note (2026-10-15):** Done. `src/Scriber.Export` — `ITranscriptExporter`,
+`TxtExporter`, `SrtExporter`, `VttExporter`, `JsonExporter`, `SrtParser`, `VttParser`, `TimeFormatUtils`.
+Txt outputs `[hh:mm:ss - hh:mm:ss] Speaker: text`. Srt generates valid SubRip numbered cues with
+`hh:mm:ss,fff` and `[Speaker]`. Vtt generates valid WebVTT with `hh:mm:ss.fff` and `<v Speaker>text`.
+Json implements versioned schema (`schema_version: "1.0"`) with lossless export and import of
+`Transcript`, `Speaker`, `Segment`, `Word` (with confidence), and `AudioReference`. Round-trip
+validation for SRT cues, VTT cues, and JSON domain equality verified.
+`dotnet test src/Scriber.Export.Tests` — 7/7 passed.
+
 ---
 
 ### PH1-EXPORT-002 — Structured Markdown exporter with YAML frontmatter
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-EXPORT-001
 **Related ADR(s):** ADR-0008 (this format doubles as the MCP server's
 resource representation in Phase 2)
@@ -148,6 +174,14 @@ differentiated export format described in
 
 **Suggested Verification:** Round-trip unit test (export → parse → assert
 equality with source `Transcript`).
+
+**Completion note (2026-10-15):** Done. `src/Scriber.Export` — `MarkdownExporter` &
+`MarkdownImporter`. Frontmatter includes title, date, duration, language, and participants list.
+Body uses `### Speaker (start - end)` headings and plain paragraphs, readable in any Markdown viewer.
+Embeds unobtrusive invisible HTML comments `<!-- scriber:words:... [...] -->` enabling 100% lossless
+round-trip restoration of `Segment`/`Word` timestamps and confidence, while `MarkdownImporter` also
+gracefully parses hand-edited markdown when comments are absent. Verified via round-trip tests in
+`Scriber.Export.Tests`. `dotnet test src/Scriber.Export.Tests` — 7/7 passed.
 
 ---
 

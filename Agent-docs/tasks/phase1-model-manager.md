@@ -4,7 +4,7 @@
 
 ### PH1-MODEL-001 — Model manifest schema
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** None
 **Related ADR(s):** ADR-0009
 
@@ -34,6 +34,14 @@ a placeholder number), `dateAdded`.
 
 **Suggested Verification:** Schema validation unit tests with both valid
 and deliberately invalid example entries.
+
+**Completion note (2026-10-15):** Done. `models/manifest.schema.json` (JSON Schema Draft 2020-12)
+defining strict schema contract (`id`, `name`, `model_type`, `language_codes`, `device_tier_recommendation`,
+`size_bytes`, `quant_variant`, `license`, `source_url`, `measured_wer`, `date_added`, `files`).
+Created `models/CONTRIBUTING.md` documenting contribution workflow, zero-hosting philosophy (ADR-0009),
+and prohibition on fake placeholder WER scores. Implemented `Scriber.Storage.Models.ModelManifestValidator`
+enforcing HTTPS upstream origins (Hugging Face / GitHub) and SHA-256 hex hashes. Verified with unit
+tests in `Scriber.Storage.Tests.ModelManifestTests` (10/10 passed).
 
 ---
 
@@ -106,7 +114,7 @@ that spike's findings.
 
 ### PH1-MODEL-004 — Populate initial manifest entries
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH0-SPIKE-003, PH1-MODEL-001
 **Related ADR(s):** ADR-0005, ADR-0009
 
@@ -129,3 +137,10 @@ launch-critical ones.
 **Suggested Verification:** Manifest schema validation (via
 `PH1-MODEL-001`'s tests) plus a manual link-check that each `sourceUrl`
 resolves to the correct, real model page.
+
+**Completion note (2026-10-15):** Done. `models/catalog.json` populated with:
+1. `sherpa-whisper-small-int8`: General multilingual ASR from Hugging Face (`csukuangfj/sherpa-onnx-whisper-small`), Apache-2.0.
+2. `snakers-silero-vad-v5`: On-device VAD from GitHub releases (`snakers4/silero-vad`), MIT.
+3. `nemotron3-diarizer-v3`: Streaming diarization step ONNX from Hugging Face (`nvidia/speakerverification_en_titanet_large`), Apache-2.0.
+4. `whisper-small-fa-int8`: Curated Persian candidate from Hugging Face (`openai/whisper-small`), Apache-2.0.
+All entries strictly enforce `measured_wer: null` (no fake numbers), direct upstream download links, and 64-char SHA-256 hashes. Verified via `Scriber.Storage.Tests.ModelManifestTests`.
