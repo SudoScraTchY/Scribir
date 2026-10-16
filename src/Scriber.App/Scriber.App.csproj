@@ -58,6 +58,7 @@
 		<ProjectReference Include="..\Scriber.Storage\Scriber.Storage.csproj" />
 		<ProjectReference Include="..\Scriber.Export\Scriber.Export.csproj" />
 		<ProjectReference Include="..\Scriber.Inference.SpeakerId\Scriber.Inference.SpeakerId.csproj" />
+		<ProjectReference Include="..\Scriber.Providers\Scriber.Providers.csproj" />
 	</ItemGroup>
 
 </Project>

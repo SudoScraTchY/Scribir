@@ -4,7 +4,7 @@
 
 ### PH2-INT-001 — BYOK provider configuration
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** None directly
 **Related ADR(s):** ADR-0007
 
@@ -38,7 +38,7 @@ access disabled.
 
 ### PH2-INT-002 — MCP server exposing transcripts and search
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-STORE-001, PH1-EXPORT-002
 **Related ADR(s):** ADR-0008
 
@@ -76,7 +76,7 @@ the acceptance criteria above.
 
 ### PH2-INT-003 — Optional local LLM summarization / action-item extraction
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH2-INT-001, PH1-EXPORT-002
 **Related ADR(s):** ADR-0007
 
@@ -109,7 +109,7 @@ never a separate, required path.
 
 ### PH2-INT-004 — Local PII / redaction pass
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-CORE-007
 **Related ADR(s):** None directly (see
 `product/02-motives-and-differentiators.md` §3.7 for rationale)
@@ -144,7 +144,7 @@ detection, review, and correct application to the exported output only.
 
 ### PH2-INT-005 — Diff-aware re-transcription
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-STORE-001, PH1-CORE-006, PH1.5-REC-003 (its
 edit-preservation groundwork)
 **Related ADR(s):** None directly (see

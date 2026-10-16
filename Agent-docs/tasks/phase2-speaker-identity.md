@@ -116,7 +116,8 @@ an unenrolled speaker in the same session.
 
 ### PH2-SPEAKER-004 — Voiceprint library management UI
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH2-SPEAKER-003
 **Related ADR(s):** ADR-0010
 

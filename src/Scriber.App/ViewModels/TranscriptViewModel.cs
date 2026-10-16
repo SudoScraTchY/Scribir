@@ -17,11 +17,15 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     private readonly IVoiceprintRepository? _voiceprintRepo;
     private readonly ISpeakerEmbedder? _speakerEmbedder;
     private readonly SpeakerMatcher? _speakerMatcher;
+    private readonly Scriber.Providers.ISummarizer? _summarizer;
+    private readonly Scriber.Providers.ICompletionProvider? _completionProvider;
 
     private Transcript? _transcript;
     private Guid _transcriptId;
     private bool _isLoading;
     private bool _isPlaying;
+    private bool _isSummarizing;
+    private string? _summaryOverview;
     private double _playbackProgress;
     private string _currentPositionText = "00:00";
     private string _durationText = "00:00";
@@ -29,10 +33,40 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
     public ObservableCollection<SegmentItemViewModel> Segments { get; } = [];
     public ObservableCollection<Speaker> Speakers { get; } = [];
+    public ObservableCollection<string> SummaryKeyPoints { get; } = [];
+    public ObservableCollection<Scriber.Providers.ActionItem> SummaryActionItems { get; } = [];
 
     public string Title => _transcript?.Title ?? "Transcript";
     public string LanguageCode => _transcript?.LanguageCode ?? string.Empty;
     public string DurationFormatted => _transcript != null ? $"{_transcript.Audio.Duration:hh\\:mm\\:ss}" : string.Empty;
+
+    public string? SummaryOverview
+    {
+        get => _summaryOverview;
+        set
+        {
+            if (SetProperty(ref _summaryOverview, value))
+            {
+                OnPropertyChanged(nameof(HasSummary));
+            }
+        }
+    }
+
+    public bool HasSummary => !string.IsNullOrWhiteSpace(SummaryOverview);
+
+    public bool IsSummarizing
+    {
+        get => _isSummarizing;
+        set
+        {
+            if (SetProperty(ref _isSummarizing, value))
+            {
+                OnPropertyChanged(nameof(CanSummarize));
+            }
+        }
+    }
+
+    public bool CanSummarize => !IsSummarizing;
 
     public bool IsLoading
     {
@@ -87,19 +121,24 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     public ICommand SaveEditCommand { get; }
     public ICommand ExportCommand { get; }
     public ICommand RenameSpeakerCommand { get; }
+    public ICommand SummarizeCommand { get; }
 
     public TranscriptViewModel(
         ITranscriptRepository repository,
         IPlaybackService playback,
         IVoiceprintRepository? voiceprintRepo = null,
         ISpeakerEmbedder? speakerEmbedder = null,
-        SpeakerMatcher? speakerMatcher = null)
+        SpeakerMatcher? speakerMatcher = null,
+        Scriber.Providers.ISummarizer? summarizer = null,
+        Scriber.Providers.ICompletionProvider? completionProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _playback = playback ?? throw new ArgumentNullException(nameof(playback));
         _voiceprintRepo = voiceprintRepo;
         _speakerEmbedder = speakerEmbedder;
         _speakerMatcher = speakerMatcher;
+        _summarizer = summarizer;
+        _completionProvider = completionProvider;
 
         _playback.PositionChanged += OnPlaybackPositionChanged;
         _playback.PlayStateChanged += OnPlaybackStateChanged;
@@ -109,6 +148,57 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         SaveEditCommand = new Command<SegmentItemViewModel>(async s => await SaveEditAsync(s));
         ExportCommand = new Command(async () => await PromptExportAsync());
         RenameSpeakerCommand = new Command<Speaker>(async s => await HandleSpeakerClickAsync(s));
+        SummarizeCommand = new Command(async () => await SummarizeAsync());
+    }
+
+    private async Task SummarizeAsync()
+    {
+        if (_completionProvider == null || !_completionProvider.IsConfigured || _summarizer == null)
+        {
+            bool goToSettings = await Shell.Current.DisplayAlert(
+                "AI Provider Required",
+                "Summarization is optional and requires an OpenAI-compatible endpoint (e.g. Ollama, LM Studio, vLLM, or commercial API).\n\nWould you like to open Settings to configure one?",
+                "Open Settings", "Cancel");
+
+            if (goToSettings)
+            {
+                await Shell.Current.GoToAsync("//settings");
+            }
+            return;
+        }
+
+        if (_transcript == null || Segments.Count == 0)
+        {
+            await Shell.Current.DisplayAlert("Notice", "No transcript text available to summarize.", "OK");
+            return;
+        }
+
+        IsSummarizing = true;
+        try
+        {
+            var exporter = new MarkdownExporter();
+            string markdown = exporter.Export(_transcript, new ExportOptions { IncludeTimestamps = false });
+
+            var result = await _summarizer.SummarizeAsync(markdown);
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                SummaryOverview = result.Summary;
+                SummaryKeyPoints.Clear();
+                foreach (var kp in result.KeyPoints) SummaryKeyPoints.Add(kp);
+
+                SummaryActionItems.Clear();
+                foreach (var ai in result.ActionItems) SummaryActionItems.Add(ai);
+            });
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Summarization Error", $"Failed to generate summary: {ex.Message}", "OK");
+        }
+        finally
+        {
+            IsSummarizing = false;
+        }
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -274,7 +364,32 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             _ => new TxtExporter()
         };
 
-        string exportedContent = exporter.Export(_transcript);
+        // PH2-INT-004: Local PII Redaction review pass
+        var redactor = new Scriber.Export.Redaction.RedactionEngine();
+        var candidates = redactor.ScanTranscript(_transcript);
+        var exportTranscript = _transcript;
+
+        if (candidates.Count > 0)
+        {
+            string piiSummary = string.Join("\n", candidates.Take(5).Select(c => $"• [{c.Category}] {c.OriginalText}"));
+            if (candidates.Count > 5) piiSummary += $"\n... and {candidates.Count - 5} more";
+
+            string decision = await Shell.Current.DisplayActionSheet(
+                $"Privacy Review: {candidates.Count} Sensitive Item(s) Detected",
+                "Cancel",
+                null,
+                "Redact and Export",
+                "Export Without Redaction");
+
+            if (decision == "Cancel" || string.IsNullOrEmpty(decision)) return;
+
+            if (decision == "Redact and Export")
+            {
+                exportTranscript = redactor.RedactTranscript(_transcript, candidates);
+            }
+        }
+
+        string exportedContent = exporter.Export(exportTranscript);
 
         // Copy to clipboard and notify
         await Clipboard.Default.SetTextAsync(exportedContent);

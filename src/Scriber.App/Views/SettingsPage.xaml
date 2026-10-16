@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             xmlns:domain="clr-namespace:Scriber.Core.Domain;assembly=Scriber.Core"
              x:Class="Scriber.App.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
              Title="Settings">
@@ -43,6 +44,104 @@
                         <Label Text="Models Cache Directory" FontSize="12" TextColor="#6B7280" />
                         <Label Text="{Binding CacheDirectory}" FontSize="13" FontAttributes="Bold" LineBreakMode="CharacterWrap" />
                     </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Enrolled Voiceprints Card (PH2-SPEAKER-004) -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Grid.Column="0" Text="Enrolled Voiceprints" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Refresh" Command="{Binding LoadVoiceprintsCommand}" FontSize="12" Padding="8,4" HeightRequest="32" />
+                    </Grid>
+                    <Label Text="On-device biometric profiles used for cross-session speaker matching (ADR-0010)." FontSize="12" TextColor="#6B7280" />
+
+                    <CollectionView ItemsSource="{Binding EnrolledVoiceprints}">
+                        <CollectionView.EmptyView>
+                            <Label Text="No voiceprints enrolled yet. You can enroll speakers directly from any transcript." FontSize="13" TextColor="#9CA3AF" Padding="0,12" />
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="domain:Voiceprint">
+                                <Border StrokeThickness="1" Stroke="#E5E7EB" Padding="12" Margin="0,4">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                                        <Label Grid.Row="0" Grid.Column="0" Text="{Binding DisplayName}" FontSize="14" FontAttributes="Bold" />
+                                        <Label Grid.Row="1" Grid.Column="0" Text="{Binding CreatedAt, StringFormat='Enrolled: {0:MMM dd, yyyy}'}" FontSize="11" TextColor="#6B7280" />
+                                        
+                                        <HorizontalStackLayout Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                            <Button Text="Rename"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=RenameVoiceprintCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" />
+                                            <Button Text="Merge"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=MergeVoiceprintCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" BackgroundColor="#4B5563" TextColor="White" />
+                                            <Button Text="Delete"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=DeleteVoiceprintCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" BackgroundColor="#DC2626" TextColor="White" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- BYOK AI Provider Card (PH2-INT-001) -->
+            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="AI Provider &amp; Integrations (BYOK)" FontSize="16" FontAttributes="Bold" />
+                    <Label Text="Optional: Configure an OpenAI-compatible endpoint for summarization and agent tooling (ADR-0007). Works with local LAN models (Ollama, LM Studio, vLLM) or commercial APIs. Core transcription runs 100% offline regardless of this setting."
+                           FontSize="12" TextColor="#6B7280" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Base URL" FontSize="12" FontAttributes="Bold" />
+                        <Entry Text="{Binding BaseUrl}" Placeholder="http://localhost:11434/v1 or https://api.openai.com/v1" FontSize="13" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="API Key (Optional for local LAN models)" FontSize="12" FontAttributes="Bold" />
+                        <Entry Text="{Binding ApiKey}" IsPassword="True" Placeholder="sk-..." FontSize="13" />
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*, 100" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Model Name" FontSize="12" FontAttributes="Bold" />
+                            <Entry Text="{Binding ModelName}" Placeholder="e.g. llama3, mistral, gpt-4o-mini" FontSize="13" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Timeout (s)" FontSize="12" FontAttributes="Bold" />
+                            <Entry Text="{Binding TimeoutSeconds}" Keyboard="Numeric" FontSize="13" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
+                        <Button Text="Save Settings"
+                                Command="{Binding SaveProviderSettingsCommand}"
+                                FontSize="13" Padding="14,8"
+                                BackgroundColor="#2563EB" TextColor="White" />
+
+                        <Button Text="Test Connection"
+                                Command="{Binding TestConnectionCommand}"
+                                FontSize="13" Padding="14,8"
+                                BackgroundColor="#4B5563" TextColor="White" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="{Binding ConnectionStatus}"
+                           IsVisible="{Binding ConnectionStatus, Converter={x:Null}}"
+                           FontSize="12" TextColor="#2563EB" Margin="0,4,0,0" />
                 </VerticalStackLayout>
             </Border>
 

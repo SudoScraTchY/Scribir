@@ -3,11 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Scriber.App.ViewModels"
              xmlns:domain="clr-namespace:Scriber.Core.Domain;assembly=Scriber.Core"
+             xmlns:providers="clr-namespace:Scriber.Providers;assembly=Scriber.Providers"
              x:Class="Scriber.App.Views.TranscriptPage"
              x:DataType="vm:TranscriptViewModel"
              Title="{Binding Title}">
 
-    <Grid RowDefinitions="Auto, Auto, *, Auto">
+    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
         
         <!-- Top Toolbar -->
         <Border Grid.Row="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
@@ -16,7 +17,14 @@
                     <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" />
                     <Label Text="{Binding DurationFormatted, StringFormat='Duration: {0}'}" FontSize="12" TextColor="#6B7280" />
                 </VerticalStackLayout>
-                <Button Grid.Column="1" Text="Export..." Command="{Binding ExportCommand}" FontSize="13" Padding="12,6" />
+                <HorizontalStackLayout Grid.Column="1" Spacing="8">
+                    <Button Text="Summarize"
+                            Command="{Binding SummarizeCommand}"
+                            IsEnabled="{Binding CanSummarize}"
+                            FontSize="13" Padding="12,6"
+                            BackgroundColor="#10B981" TextColor="White" />
+                    <Button Text="Export..." Command="{Binding ExportCommand}" FontSize="13" Padding="12,6" />
+                </HorizontalStackLayout>
             </Grid>
         </Border>
 
@@ -42,8 +50,37 @@
             </HorizontalStackLayout>
         </Border>
 
+        <!-- Meeting Summary & Action Items Card (PH2-INT-003) -->
+        <Border Grid.Row="2"
+                IsVisible="{Binding HasSummary}"
+                StrokeThickness="1" Stroke="{AppThemeBinding Light=#10B981, Dark=#059669}"
+                BackgroundColor="{AppThemeBinding Light=#ECFDF5, Dark=#064E3B}"
+                Margin="12,8" Padding="16">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10" />
+            </Border.StrokeShape>
+            <VerticalStackLayout Spacing="10">
+                <Label Text="AI Meeting Summary" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#065F46, Dark=#A7F3D0}" />
+                <Label Text="{Binding SummaryOverview}" FontSize="13" TextColor="{AppThemeBinding Light=#047857, Dark=#D1FAE5}" />
+
+                <Label Text="Action Items" FontSize="13" FontAttributes="Bold" Margin="0,4,0,0" TextColor="{AppThemeBinding Light=#065F46, Dark=#A7F3D0}" />
+
+                <CollectionView ItemsSource="{Binding SummaryActionItems}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="providers:ActionItem">
+                            <HorizontalStackLayout Spacing="6" Margin="0,2">
+                                <Label Text="•" FontSize="14" FontAttributes="Bold" TextColor="#10B981" />
+                                <Label Text="{Binding Assignee, StringFormat='[{0}] '}" FontAttributes="Bold" FontSize="12" TextColor="#047857" />
+                                <Label Text="{Binding Description}" FontSize="12" TextColor="{AppThemeBinding Light=#065F46, Dark=#D1FAE5}" />
+                            </HorizontalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </Border>
+
         <!-- Transcript Segments List -->
-        <CollectionView Grid.Row="2" ItemsSource="{Binding Segments}" SelectionMode="Single" SelectedItem="{Binding SelectedSegment}">
+        <CollectionView Grid.Row="3" ItemsSource="{Binding Segments}" SelectionMode="Single" SelectedItem="{Binding SelectedSegment}">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:SegmentItemViewModel">
                     <Border StrokeThickness="1"
@@ -96,7 +133,7 @@
         </CollectionView>
 
         <!-- Playback Controller Bar -->
-        <Border Grid.Row="3" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
+        <Border Grid.Row="4" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
             <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
                 
                 <!-- Play/Pause Button -->

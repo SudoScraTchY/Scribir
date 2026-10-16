@@ -1,5 +1,6 @@
 using System.Data;
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Scriber.Core.Domain;
@@ -419,7 +420,7 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
             using (var cmd = conn.CreateCommand())
             {
                 cmd.Transaction = tx;
-                cmd.CommandText = "DELETE FROM transcripts WHERE id = $id; DELETE FROM transcript_fts WHERE transcript_id = $id;";
+                cmd.CommandText = "DELETE FROM transcripts WHERE id = $id; DELETE FROM transcript_fts WHERE transcript_id = $id; DELETE FROM transcript_versions WHERE transcript_id = $id;";
                 cmd.Parameters.AddWithValue("$id", idStr);
                 await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
@@ -491,6 +492,119 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
             {
                 conn.Dispose();
             }
+        }
+    }
+
+    public async Task<Guid> ArchiveVersionAsync(Guid transcriptId, string note = "", CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var current = await GetByIdAsync(transcriptId, ct).ConfigureAwait(false);
+        if (current == null)
+        {
+            throw new InvalidOperationException($"Cannot archive: transcript with ID '{transcriptId}' does not exist.");
+        }
+
+        var conn = CreateOrGetConnection();
+        bool ownsConnection = _managedConnection == null;
+
+        try
+        {
+            int nextVersion = 1;
+            using (var verCmd = conn.CreateCommand())
+            {
+                verCmd.CommandText = "SELECT COALESCE(MAX(version_number), 0) + 1 FROM transcript_versions WHERE transcript_id = $id;";
+                verCmd.Parameters.AddWithValue("$id", transcriptId.ToString());
+                var res = await verCmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+                if (res != null && res != DBNull.Value)
+                {
+                    nextVersion = Convert.ToInt32(res, CultureInfo.InvariantCulture);
+                }
+            }
+
+            Guid versionId = Guid.NewGuid();
+            string json = JsonSerializer.Serialize(current);
+
+            using (var insertCmd = conn.CreateCommand())
+            {
+                insertCmd.CommandText = """
+                    INSERT INTO transcript_versions (id, transcript_id, version_number, created_at, note, content_json)
+                    VALUES ($id, $transcript_id, $ver, $created_at, $note, $json);
+                """;
+                insertCmd.Parameters.AddWithValue("$id", versionId.ToString());
+                insertCmd.Parameters.AddWithValue("$transcript_id", transcriptId.ToString());
+                insertCmd.Parameters.AddWithValue("$ver", nextVersion);
+                insertCmd.Parameters.AddWithValue("$created_at", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+                insertCmd.Parameters.AddWithValue("$note", note ?? string.Empty);
+                insertCmd.Parameters.AddWithValue("$json", json);
+
+                await insertCmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+
+            return versionId;
+        }
+        finally
+        {
+            if (ownsConnection) conn.Dispose();
+        }
+    }
+
+    public async Task<IReadOnlyList<TranscriptVersionInfo>> GetVersionsAsync(Guid transcriptId, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var conn = CreateOrGetConnection();
+        bool ownsConnection = _managedConnection == null;
+
+        try
+        {
+            var list = new List<TranscriptVersionInfo>();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT id, transcript_id, version_number, created_at, note
+                FROM transcript_versions
+                WHERE transcript_id = $id
+                ORDER BY version_number DESC;
+            """;
+            cmd.Parameters.AddWithValue("$id", transcriptId.ToString());
+
+            using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                list.Add(new TranscriptVersionInfo(
+                    Id: Guid.Parse(reader.GetString(0)),
+                    TranscriptId: Guid.Parse(reader.GetString(1)),
+                    VersionNumber: reader.GetInt32(2),
+                    CreatedAt: DateTimeOffset.Parse(reader.GetString(3), CultureInfo.InvariantCulture),
+                    Note: reader.GetString(4)));
+            }
+
+            return list;
+        }
+        finally
+        {
+            if (ownsConnection) conn.Dispose();
+        }
+    }
+
+    public async Task<Transcript?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var conn = CreateOrGetConnection();
+        bool ownsConnection = _managedConnection == null;
+
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT content_json FROM transcript_versions WHERE id = $id;";
+            cmd.Parameters.AddWithValue("$id", versionId.ToString());
+
+            var json = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+            if (string.IsNullOrWhiteSpace(json)) return null;
+
+            return JsonSerializer.Deserialize<Transcript>(json);
+        }
+        finally
+        {
+            if (ownsConnection) conn.Dispose();
         }
     }
 

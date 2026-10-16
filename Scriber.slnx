@@ -11,8 +11,12 @@
     <Project Path="src/Scriber.Inference.Diarization/Scriber.Inference.Diarization.csproj" />
     <Project Path="src/Scriber.Inference.SpeakerId.Tests/Scriber.Inference.SpeakerId.Tests.csproj" />
     <Project Path="src/Scriber.Inference.SpeakerId/Scriber.Inference.SpeakerId.csproj" />
+    <Project Path="src/Scriber.Mcp.Tests/Scriber.Mcp.Tests.csproj" />
+    <Project Path="src/Scriber.Mcp/Scriber.Mcp.csproj" />
     <Project Path="src/Scriber.Pipeline.Tests/Scriber.Pipeline.Tests.csproj" />
     <Project Path="src/Scriber.Pipeline/Scriber.Pipeline.csproj" />
+    <Project Path="src/Scriber.Providers.Tests/Scriber.Providers.Tests.csproj" />
+    <Project Path="src/Scriber.Providers/Scriber.Providers.csproj" />
     <Project Path="src/Scriber.Storage.Tests/Scriber.Storage.Tests.csproj" />
     <Project Path="src/Scriber.Storage/Scriber.Storage.csproj" />
   </Folder>

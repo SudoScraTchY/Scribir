@@ -132,4 +132,32 @@ public class SpeakerIdTests
 
         Assert.Throws<FileNotFoundException>(() => new SherpaSpeakerEmbedder(config));
     }
+
+    [Fact]
+    public async Task SherpaSpeakerEmbedder_RealOnnxModel_ExtractsValidEmbedding()
+    {
+        string repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        string modelPath = Path.Combine(repoRoot, "spikes", "PH0-SPIKE-001", "artifacts", "sherpa-models", "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx");
+        if (!File.Exists(modelPath)) return;
+
+        var config = new SherpaSpeakerEmbedderConfig
+        {
+            ModelPath = modelPath,
+            NumThreads = 2
+        };
+
+        using var embedder = new SherpaSpeakerEmbedder(config);
+        Assert.True(embedder.EmbeddingDimension > 0, $"Expected dimension > 0, got {embedder.EmbeddingDimension}");
+
+        float[] samples = new float[16000 * 3];
+        for (int i = 0; i < samples.Length; i++)
+        {
+            samples[i] = MathF.Sin(2f * MathF.PI * 440f * i / 16000f) * 0.5f;
+        }
+        var buffer = new AudioBuffer(samples, 16000, 1);
+
+        var embedding = await embedder.ExtractEmbeddingAsync(buffer);
+        Assert.NotNull(embedding);
+        Assert.Equal(embedder.EmbeddingDimension, embedding.Length);
+    }
 }

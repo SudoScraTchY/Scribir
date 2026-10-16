@@ -24,6 +24,7 @@ public static class MauiProgram
         // 1. Storage & Model Manager Services
         string dbPath = Path.Combine(FileSystem.AppDataDirectory, "scriber.db");
         string modelsDir = Path.Combine(FileSystem.AppDataDirectory, "models");
+        string providerSettingsPath = Path.Combine(FileSystem.AppDataDirectory, "provider_settings.json");
 
         builder.Services.AddSingleton<ITranscriptRepository>(_ => new SqliteTranscriptRepository(dbPath));
         builder.Services.AddSingleton<IVoiceprintRepository>(_ => new SqliteVoiceprintRepository(dbPath));
@@ -33,11 +34,21 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPlaybackService, PlaybackService>();
         builder.Services.AddSingleton<IPipelineFactory, PipelineFactory>();
 
+        // BYOK Provider & Summarizer (PH2-INT-001, PH2-INT-003)
+        builder.Services.AddSingleton<Scriber.Providers.IProviderSettingsStore>(_ => new Scriber.Providers.JsonFileProviderSettingsStore(providerSettingsPath));
+        builder.Services.AddSingleton<Scriber.Providers.ICompletionProvider>(sp => new Scriber.Providers.OpenAiCompatibleProvider(sp.GetRequiredService<Scriber.Providers.IProviderSettingsStore>()));
+        builder.Services.AddSingleton<Scriber.Providers.ISummarizer, Scriber.Providers.TranscriptSummarizer>();
+
         // 2. ViewModels
         builder.Services.AddTransient<TranscribeViewModel>();
         builder.Services.AddTransient<LibraryViewModel>();
         builder.Services.AddTransient<TranscriptViewModel>();
-        builder.Services.AddTransient(sp => new SettingsViewModel(sp.GetRequiredService<IModelCacheManager>(), dbPath));
+        builder.Services.AddTransient(sp => new SettingsViewModel(
+            sp.GetRequiredService<IModelCacheManager>(),
+            sp.GetRequiredService<IVoiceprintRepository>(),
+            sp.GetRequiredService<Scriber.Providers.IProviderSettingsStore>(),
+            sp.GetRequiredService<Scriber.Providers.ICompletionProvider>(),
+            dbPath));
 
         // 3. Views
         builder.Services.AddTransient<TranscribePage>();
