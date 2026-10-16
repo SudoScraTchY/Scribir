@@ -72,7 +72,7 @@ public class SqliteTranscriptRepositoryTests : IDisposable
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = "SELECT COUNT(*) FROM schema_migrations;";
         long count = (long)cmd.ExecuteScalar()!;
-        Assert.Equal(1, count);
+        Assert.Equal(2, count); // Migration 1 and Migration 2
     }
 
     [Fact]

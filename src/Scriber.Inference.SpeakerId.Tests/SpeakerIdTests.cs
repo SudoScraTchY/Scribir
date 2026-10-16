@@ -1,0 +1,135 @@
+namespace Scriber.Inference.SpeakerId.Tests;
+
+using Scriber.Core.Audio;
+using Scriber.Core.Domain;
+using Scriber.Core.Inference;
+using Scriber.Inference.SpeakerId;
+using Xunit;
+
+public class SpeakerIdTests
+{
+    [Fact]
+    public void CosineSimilarity_IdenticalVectors_ReturnsOne()
+    {
+        float[] a = [1f, 2f, 3f];
+        float[] b = [1f, 2f, 3f];
+        float sim = SpeakerEmbeddingMath.CosineSimilarity(a, b);
+        Assert.Equal(1f, sim, precision: 5);
+    }
+
+    [Fact]
+    public void CosineSimilarity_OrthogonalVectors_ReturnsZero()
+    {
+        float[] a = [1f, 0f, 0f];
+        float[] b = [0f, 1f, 0f];
+        float sim = SpeakerEmbeddingMath.CosineSimilarity(a, b);
+        Assert.Equal(0f, sim, precision: 5);
+    }
+
+    [Fact]
+    public void CosineSimilarity_OppositeVectors_ReturnsMinusOne()
+    {
+        float[] a = [1f, 0f, 0f];
+        float[] b = [-1f, 0f, 0f];
+        float sim = SpeakerEmbeddingMath.CosineSimilarity(a, b);
+        Assert.Equal(-1f, sim, precision: 5);
+    }
+
+    [Fact]
+    public void CosineSimilarity_MismatchedOrEmpty_ReturnsZero()
+    {
+        float[] a = [1f, 2f];
+        float[] b = [1f, 2f, 3f];
+        Assert.Equal(0f, SpeakerEmbeddingMath.CosineSimilarity(a, b));
+        Assert.Equal(0f, SpeakerEmbeddingMath.CosineSimilarity(Array.Empty<float>(), a));
+    }
+
+    [Fact]
+    public async Task InMemorySpeakerEmbedder_ExtractsDeterministicNormalizedEmbedding()
+    {
+        using var embedder = new InMemorySpeakerEmbedder(dimension: 64);
+        Assert.Equal(64, embedder.EmbeddingDimension);
+
+        float[] samples = new float[16000 * 2]; // 2 seconds at 16kHz
+        for (int i = 0; i < samples.Length; i++)
+        {
+            samples[i] = MathF.Sin(2f * MathF.PI * 440f * i / 16000f);
+        }
+
+        var buffer = new AudioBuffer(samples, 16000, 1);
+
+        var emb1 = await embedder.ExtractEmbeddingAsync(buffer);
+        var emb2 = await embedder.ExtractEmbeddingAsync(buffer);
+
+        Assert.Equal(64, emb1.Length);
+        Assert.Equal(64, emb2.Length);
+
+        // Verify determinism
+        Assert.Equal(emb1, emb2);
+
+        // Verify L2 norm is ~1.0
+        float norm = 0f;
+        foreach (var v in emb1) norm += v * v;
+        Assert.Equal(1f, MathF.Sqrt(norm), precision: 4);
+    }
+
+    [Fact]
+    public void SpeakerMatcher_MatchesAboveThreshold()
+    {
+        var matcher = new SpeakerMatcher(defaultThreshold: 0.70f);
+
+        var vpAlice = new Voiceprint(Guid.NewGuid(), "Alice", new float[] { 1f, 0f, 0f }, DateTimeOffset.UtcNow);
+        var vpBob = new Voiceprint(Guid.NewGuid(), "Bob", new float[] { 0f, 1f, 0f }, DateTimeOffset.UtcNow);
+
+        // Query vector very close to Alice
+        float[] queryEmbedding = [0.99f, 0.05f, 0.0f];
+
+        var result = matcher.Match("Speaker 0", queryEmbedding, [vpAlice, vpBob]);
+
+        Assert.Equal("Speaker 0", result.DiarizedSpeakerId);
+        Assert.NotNull(result.BestMatch);
+        Assert.Equal("Alice", result.BestMatch.Voiceprint.DisplayName);
+        Assert.True(result.MeetsThreshold);
+        Assert.True(result.BestMatch.Similarity > 0.90f);
+    }
+
+    [Fact]
+    public void SpeakerMatcher_DoesNotMeetThresholdWhenBelow()
+    {
+        var matcher = new SpeakerMatcher(defaultThreshold: 0.85f);
+
+        var vpAlice = new Voiceprint(Guid.NewGuid(), "Alice", new float[] { 1f, 0f, 0f }, DateTimeOffset.UtcNow);
+
+        // Query vector has low similarity (~0.70)
+        float[] queryEmbedding = [0.70f, 0.70f, 0.0f];
+
+        var result = matcher.Match("Speaker 1", queryEmbedding, [vpAlice]);
+
+        Assert.NotNull(result.BestMatch);
+        Assert.False(result.MeetsThreshold);
+        Assert.True(result.BestMatch.Similarity < 0.85f);
+    }
+
+    [Fact]
+    public void SpeakerMatcher_EmptyVoiceprints_ReturnsNoMatch()
+    {
+        var matcher = new SpeakerMatcher(0.60f);
+        float[] queryEmbedding = [1f, 0f, 0f];
+
+        var result = matcher.Match("Speaker X", queryEmbedding, Array.Empty<Voiceprint>());
+
+        Assert.Null(result.BestMatch);
+        Assert.False(result.MeetsThreshold);
+    }
+
+    [Fact]
+    public void SherpaSpeakerEmbedder_MissingFile_ThrowsFileNotFoundException()
+    {
+        var config = new SherpaSpeakerEmbedderConfig
+        {
+            ModelPath = "non_existent_model_weights.onnx"
+        };
+
+        Assert.Throws<FileNotFoundException>(() => new SherpaSpeakerEmbedder(config));
+    }
+}

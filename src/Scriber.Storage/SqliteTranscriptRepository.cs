@@ -133,13 +133,14 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
                 using var insertSpkCmd = conn.CreateCommand();
                 insertSpkCmd.Transaction = tx;
                 insertSpkCmd.CommandText = """
-                    INSERT INTO speakers (transcript_id, speaker_id, display_name, color_hex)
-                    VALUES ($tid, $sid, $name, $color);
+                    INSERT INTO speakers (transcript_id, speaker_id, display_name, color_hex, voiceprint_id)
+                    VALUES ($tid, $sid, $name, $color, $vpid);
                 """;
                 insertSpkCmd.Parameters.AddWithValue("$tid", idStr);
                 insertSpkCmd.Parameters.AddWithValue("$sid", spk.Id);
                 insertSpkCmd.Parameters.AddWithValue("$name", spk.DisplayName);
                 insertSpkCmd.Parameters.AddWithValue("$color", spk.ColorHex);
+                insertSpkCmd.Parameters.AddWithValue("$vpid", (object?)spk.VoiceprintId?.ToString() ?? DBNull.Value);
                 await insertSpkCmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
 
@@ -256,12 +257,22 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
             var speakers = new List<Speaker>();
             using (var spkCmd = conn.CreateCommand())
             {
-                spkCmd.CommandText = "SELECT speaker_id, display_name, color_hex FROM speakers WHERE transcript_id = $id;";
+                spkCmd.CommandText = "SELECT speaker_id, display_name, color_hex, voiceprint_id FROM speakers WHERE transcript_id = $id;";
                 spkCmd.Parameters.AddWithValue("$id", idStr);
                 using var reader = await spkCmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
                 while (await reader.ReadAsync(ct).ConfigureAwait(false))
                 {
-                    speakers.Add(new Speaker(reader.GetString(0), reader.GetString(1), reader.GetString(2)));
+                    Guid? vpid = null;
+                    if (!reader.IsDBNull(3))
+                    {
+                        string vpidStr = reader.GetString(3);
+                        if (Guid.TryParse(vpidStr, out var parsedGuid))
+                        {
+                            vpid = parsedGuid;
+                        }
+                    }
+
+                    speakers.Add(new Speaker(reader.GetString(0), reader.GetString(1), reader.GetString(2), vpid));
                 }
             }
 

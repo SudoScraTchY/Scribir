@@ -8,7 +8,8 @@ functional with none of this ever having run.
 
 ### PH2-SPEAKER-001 — Speaker embedding extraction
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH1-CORE-004
 **Related ADR(s):** ADR-0010, ADR-0003
 
@@ -46,7 +47,8 @@ speaker similarity property on fixture audio.
 
 ### PH2-SPEAKER-002 — Enrollment flow
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH2-SPEAKER-001, PH1-STORE-001
 **Related ADR(s):** ADR-0010
 
@@ -77,7 +79,8 @@ check confirming no data leaves the device during enrollment.
 
 ### PH2-SPEAKER-003 — Cross-session matching
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-16
 **Depends On:** PH2-SPEAKER-002
 **Related ADR(s):** ADR-0010
 

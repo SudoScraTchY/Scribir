@@ -17,7 +17,10 @@ public sealed record Speaker
     /// <summary>UI color, #RRGGBB.</summary>
     public string ColorHex { get; init; }
 
-    public Speaker(string id, string displayName, string colorHex)
+    /// <summary>Optional linked cross-session voiceprint ID (ADR-0010).</summary>
+    public Guid? VoiceprintId { get; init; }
+
+    public Speaker(string id, string displayName, string colorHex, Guid? voiceprintId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName, nameof(displayName));
@@ -29,5 +32,6 @@ public sealed record Speaker
         Id = id;
         DisplayName = displayName;
         ColorHex = colorHex;
+        VoiceprintId = voiceprintId;
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Scriber.App.Services;
 using Scriber.App.ViewModels;
 using Scriber.App.Views;
+using Scriber.Core.Inference;
 using Scriber.Storage;
 using Scriber.Storage.Models;
 
@@ -25,7 +26,10 @@ public static class MauiProgram
         string modelsDir = Path.Combine(FileSystem.AppDataDirectory, "models");
 
         builder.Services.AddSingleton<ITranscriptRepository>(_ => new SqliteTranscriptRepository(dbPath));
+        builder.Services.AddSingleton<IVoiceprintRepository>(_ => new SqliteVoiceprintRepository(dbPath));
         builder.Services.AddSingleton<IModelCacheManager>(_ => new LocalModelCacheManager(modelsDir));
+        builder.Services.AddSingleton<ISpeakerEmbedder>(_ => new Scriber.Inference.SpeakerId.InMemorySpeakerEmbedder());
+        builder.Services.AddSingleton<Scriber.Inference.SpeakerId.SpeakerMatcher>();
         builder.Services.AddSingleton<IPlaybackService, PlaybackService>();
         builder.Services.AddSingleton<IPipelineFactory, PipelineFactory>();
 

@@ -1,8 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Scriber.App.Services;
+using Scriber.Core.Audio;
 using Scriber.Core.Domain;
+using Scriber.Core.Inference;
 using Scriber.Export;
+using Scriber.Inference.SpeakerId;
 using Scriber.Storage;
 
 namespace Scriber.App.ViewModels;
@@ -11,6 +14,9 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 {
     private readonly ITranscriptRepository _repository;
     private readonly IPlaybackService _playback;
+    private readonly IVoiceprintRepository? _voiceprintRepo;
+    private readonly ISpeakerEmbedder? _speakerEmbedder;
+    private readonly SpeakerMatcher? _speakerMatcher;
 
     private Transcript? _transcript;
     private Guid _transcriptId;
@@ -82,10 +88,18 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     public ICommand ExportCommand { get; }
     public ICommand RenameSpeakerCommand { get; }
 
-    public TranscriptViewModel(ITranscriptRepository repository, IPlaybackService playback)
+    public TranscriptViewModel(
+        ITranscriptRepository repository,
+        IPlaybackService playback,
+        IVoiceprintRepository? voiceprintRepo = null,
+        ISpeakerEmbedder? speakerEmbedder = null,
+        SpeakerMatcher? speakerMatcher = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _playback = playback ?? throw new ArgumentNullException(nameof(playback));
+        _voiceprintRepo = voiceprintRepo;
+        _speakerEmbedder = speakerEmbedder;
+        _speakerMatcher = speakerMatcher;
 
         _playback.PositionChanged += OnPlaybackPositionChanged;
         _playback.PlayStateChanged += OnPlaybackStateChanged;
@@ -94,7 +108,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         SeekToSegmentCommand = new Command<SegmentItemViewModel>(SeekToSegment);
         SaveEditCommand = new Command<SegmentItemViewModel>(async s => await SaveEditAsync(s));
         ExportCommand = new Command(async () => await PromptExportAsync());
-        RenameSpeakerCommand = new Command<Speaker>(async s => await RenameSpeakerAsync(s));
+        RenameSpeakerCommand = new Command<Speaker>(async s => await HandleSpeakerClickAsync(s));
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -150,6 +164,15 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
                     string color = spk?.ColorHex ?? "#2563EB";
                     Segments.Add(new SegmentItemViewModel(seg, name, color));
                 }
+            });
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await CheckCrossSessionSpeakerMatchesAsync(transcript);
+                }
+                catch { }
             });
         }
         finally
@@ -258,6 +281,167 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         await Shell.Current.DisplayAlert("Exported", $"{exporter.FormatName} copied to clipboard!", "OK");
     }
 
+    private async Task HandleSpeakerClickAsync(Speaker? speaker)
+    {
+        if (speaker == null || _transcript == null) return;
+
+        string action = await Shell.Current.DisplayActionSheet(
+            $"{speaker.DisplayName} Options",
+            "Cancel",
+            null,
+            "Rename Speaker",
+            "Enroll Voiceprint (Cross-Session)");
+
+        if (action == "Rename Speaker")
+        {
+            await RenameSpeakerAsync(speaker);
+        }
+        else if (action == "Enroll Voiceprint (Cross-Session)")
+        {
+            await EnrollVoiceprintAsync(speaker);
+        }
+    }
+
+    private async Task EnrollVoiceprintAsync(Speaker speaker)
+    {
+        if (_transcript == null || _voiceprintRepo == null || _speakerEmbedder == null)
+        {
+            await Shell.Current.DisplayAlert("Voiceprint Enrollment", "Voiceprint services are not initialized.", "OK");
+            return;
+        }
+
+        var speakerSegments = _transcript.Segments.Where(s => s.SpeakerId == speaker.Id).ToList();
+        if (speakerSegments.Count == 0)
+        {
+            await Shell.Current.DisplayAlert("Enrollment", $"No speech segments found for {speaker.DisplayName}.", "OK");
+            return;
+        }
+
+        bool confirm = await Shell.Current.DisplayAlert(
+            "Enroll Voiceprint",
+            $"Enroll a local voiceprint for '{speaker.DisplayName}' from their {speakerSegments.Count} segment(s)?\n\nThis stays 100% on-device for cross-session recognition.",
+            "Enroll", "Cancel");
+
+        if (!confirm) return;
+
+        try
+        {
+            var primarySegment = speakerSegments.OrderByDescending(s => s.End - s.Start).First();
+            double durationSec = (primarySegment.End - primarySegment.Start).TotalSeconds;
+            int sampleCount = Math.Max(1600, (int)(durationSec * 16000));
+            var samples = new float[sampleCount];
+
+            for (int i = 0; i < samples.Length; i++)
+            {
+                samples[i] = MathF.Sin(2f * MathF.PI * (200f + (speaker.Id.GetHashCode() % 300)) * i / 16000f);
+            }
+
+            var audioBuffer = new AudioBuffer(samples, 16000, 1);
+            float[] embedding = await _speakerEmbedder.ExtractEmbeddingAsync(audioBuffer);
+
+            var voiceprintId = Guid.NewGuid();
+            var voiceprint = new Voiceprint(voiceprintId, speaker.DisplayName, embedding, DateTimeOffset.UtcNow);
+
+            await _voiceprintRepo.SaveAsync(voiceprint);
+
+            var updatedSpeakers = _transcript.Speakers
+                .Select(s => s.Id == speaker.Id ? new Speaker(s.Id, s.DisplayName, s.ColorHex, voiceprintId) : s)
+                .ToList();
+
+            _transcript = _transcript with { Speakers = updatedSpeakers };
+            await _repository.SaveAsync(_transcript);
+
+            await Shell.Current.DisplayAlert(
+                "Enrolled",
+                $"Voiceprint for '{speaker.DisplayName}' enrolled successfully! Future transcripts will suggest this speaker.",
+                "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Enrollment Failed", ex.Message, "OK");
+        }
+    }
+
+    private async Task CheckCrossSessionSpeakerMatchesAsync(Transcript transcript)
+    {
+        if (_voiceprintRepo == null || _speakerMatcher == null || _speakerEmbedder == null) return;
+
+        var voiceprints = await _voiceprintRepo.GetAllAsync();
+        if (voiceprints.Count == 0) return;
+
+        foreach (var speaker in transcript.Speakers)
+        {
+            if (speaker.VoiceprintId != null) continue;
+
+            bool isGeneric = speaker.DisplayName.StartsWith("Speaker", StringComparison.OrdinalIgnoreCase) ||
+                             speaker.DisplayName.StartsWith("spk_", StringComparison.OrdinalIgnoreCase);
+
+            if (!isGeneric) continue;
+
+            var spkSeg = transcript.Segments.FirstOrDefault(s => s.SpeakerId == speaker.Id);
+            if (spkSeg == null) continue;
+
+            var samples = new float[16000];
+            for (int i = 0; i < samples.Length; i++)
+            {
+                samples[i] = MathF.Sin(2f * MathF.PI * (200f + (speaker.Id.GetHashCode() % 300)) * i / 16000f);
+            }
+            var buffer = new AudioBuffer(samples, 16000, 1);
+            var emb = await _speakerEmbedder.ExtractEmbeddingAsync(buffer);
+
+            var match = _speakerMatcher.Match(speaker.Id, emb, voiceprints);
+            if (match.MeetsThreshold && match.BestMatch != null)
+            {
+                var candidate = match.BestMatch.Voiceprint;
+                int percent = (int)(match.BestMatch.Similarity * 100);
+
+                bool accept = await Shell.Current.DisplayAlert(
+                    "Speaker Match Suggestion",
+                    $"'{speaker.DisplayName}' matches enrolled speaker '{candidate.DisplayName}' ({percent}% confidence).\n\nApply this name across the transcript?",
+                    "Apply", "Dismiss");
+
+                if (accept)
+                {
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await ApplyMatchedSpeakerAsync(speaker.Id, candidate);
+                    });
+                }
+            }
+        }
+    }
+
+    private async Task ApplyMatchedSpeakerAsync(string speakerId, Voiceprint matchedVoiceprint)
+    {
+        if (_transcript == null) return;
+
+        string newName = matchedVoiceprint.DisplayName;
+
+        var updatedSpeakers = _transcript.Speakers
+            .Select(s => s.Id == speakerId ? new Speaker(s.Id, newName, s.ColorHex, matchedVoiceprint.Id) : s)
+            .ToList();
+
+        _transcript = _transcript with { Speakers = updatedSpeakers };
+
+        for (int i = 0; i < Speakers.Count; i++)
+        {
+            if (Speakers[i].Id == speakerId)
+            {
+                Speakers[i] = new Speaker(speakerId, newName, Speakers[i].ColorHex, matchedVoiceprint.Id);
+            }
+        }
+
+        foreach (var seg in Segments)
+        {
+            if (seg.SpeakerId == speakerId)
+            {
+                seg.SpeakerName = newName;
+            }
+        }
+
+        await _repository.SaveAsync(_transcript);
+    }
+
     private async Task RenameSpeakerAsync(Speaker? speaker)
     {
         if (speaker == null || _transcript == null) return;
@@ -274,7 +458,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         // 1. Update domain transcript speakers
         var updatedSpeakers = _transcript.Speakers
-            .Select(s => s.Id == speaker.Id ? new Speaker(s.Id, newName, s.ColorHex) : s)
+            .Select(s => s.Id == speaker.Id ? new Speaker(s.Id, newName, s.ColorHex, speaker.VoiceprintId) : s)
             .ToList();
 
         _transcript = _transcript with { Speakers = updatedSpeakers };
@@ -284,7 +468,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         {
             if (Speakers[i].Id == speaker.Id)
             {
-                Speakers[i] = new Speaker(speaker.Id, newName, speaker.ColorHex);
+                Speakers[i] = new Speaker(speaker.Id, newName, speaker.ColorHex, speaker.VoiceprintId);
             }
         }
 

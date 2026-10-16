@@ -10,7 +10,8 @@ public static class DatabaseMigrator
 {
     private static readonly IReadOnlyList<ISchemaMigration> AllMigrations =
     [
-        new Migration_001_InitialSchema()
+        new Migration_001_InitialSchema(),
+        new Migration_002_Voiceprints()
     ];
 
     public static void Migrate(SqliteConnection connection)

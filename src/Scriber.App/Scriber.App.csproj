@@ -57,6 +57,7 @@
 		<ProjectReference Include="..\Scriber.Pipeline\Scriber.Pipeline.csproj" />
 		<ProjectReference Include="..\Scriber.Storage\Scriber.Storage.csproj" />
 		<ProjectReference Include="..\Scriber.Export\Scriber.Export.csproj" />
+		<ProjectReference Include="..\Scriber.Inference.SpeakerId\Scriber.Inference.SpeakerId.csproj" />
 	</ItemGroup>
 
 </Project>
