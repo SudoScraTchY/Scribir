@@ -15,6 +15,9 @@ public record Segment
     /// <summary>Words in chronological order, all inside [Start, End].</summary>
     public IReadOnlyList<Word> Words { get; init; }
 
+    /// <summary>Convenience aggregated text of all words in this segment.</summary>
+    public string Text => string.Join(" ", Words.Select(w => w.Text));
+
     public Segment(string speakerId, TimeSpan start, TimeSpan end, IReadOnlyList<Word> words)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(speakerId, nameof(speakerId));

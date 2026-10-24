@@ -47,7 +47,8 @@ tests in `Scriber.Storage.Tests.ModelManifestTests` (10/10 passed).
 
 ### PH1-MODEL-002 — Model Manager UI
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-20
 **Depends On:** PH1-MODEL-001, PH1-STORE-002
 **Related ADR(s):** ADR-0009
 
@@ -72,6 +73,14 @@ this screen may surface its recommendation).
 
 **Suggested Verification:** Manual test of browse/filter/download/delete
 flows on both platforms.
+
+**Completion note (2026-10-20):** Done. Implemented `IModelCatalogService` & `ModelCatalogService`
+with bundled fallback manifest and repo root discovery. Implemented `ModelItemViewModel` and
+`ModelsViewModel` featuring live search, filter chips (Type, Tier, Language), real-time download
+progress reporting, SHA-256 verification, and model deletion. Built `ModelsPage.xaml` featuring
+prominent offline & network privacy disclosure banner per ADR-0009, clear license & size badges,
+direct upstream links, and confirmation dialog warning before initiating any network download.
+Registered in `MauiProgram.cs` and `AppShell.xaml` with tab and route navigation. Tested on Windows Desktop.
 
 ---
 

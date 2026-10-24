@@ -4,75 +4,279 @@
              xmlns:vm="clr-namespace:Scriber.App.ViewModels"
              x:Class="Scriber.App.Views.TranscribePage"
              x:DataType="vm:TranscribeViewModel"
-             Title="Transcribe">
+             Title="Transcribe"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="24" Padding="24" MaximumWidthRequest="700" HorizontalOptions="Center">
-            
-            <!-- Header -->
-            <VerticalStackLayout Spacing="6">
-                <Label Text="New Transcription" FontSize="26" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}" />
-                <Label Text="Import a recording to generate speaker-attributed transcripts on-device." FontSize="14" TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
-            </VerticalStackLayout>
+        <VerticalStackLayout Spacing="16" Padding="16" MaximumWidthRequest="640" HorizontalOptions="Center">
 
-            <!-- File Selection Card -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <!-- ===================== 0. NO MODELS DOWNLOADED BANNER ===================== -->
+            <Border IsVisible="{Binding HasNoDownloadedModels}"
+                    StrokeThickness="1" Stroke="#F59E0B"
+                    BackgroundColor="{AppThemeBinding Light='#FEF3C7', Dark='#451A03'}"
+                    Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="10">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Label Text="⚠️" FontSize="18" VerticalOptions="Center" />
+                        <Label Text="No Speech Recognition Models Installed" FontSize="14" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light='#B45309', Dark='#FBBF24'}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Label Text="To transcribe audio or record live meetings, please download an on-device model (e.g. Whisper Small INT8 or GGUF) from the Models Manager."
+                           FontSize="12" TextColor="{AppThemeBinding Light='#92400E', Dark='#FDE68A'}" />
+                    <Button Text="📥 Go to Models Tab" Command="{Binding GoToModelsTabCommand}"
+                            BackgroundColor="#D97706" TextColor="White" FontAttributes="Bold"
+                            HeightRequest="40" CornerRadius="8" HorizontalOptions="Start" Padding="16,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ===================== 1. ACTIVE ENGINE STATUS & SETTINGS SHORTCUT ===================== -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="16,12">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                    <VerticalStackLayout Grid.Column="0" Spacing="3" VerticalOptions="Center">
+                        <Label Text="{Binding ActiveSessionSummary}"
+                               FontSize="13" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                               LineBreakMode="TailTruncation" />
+                        <Label Text="Pipeline configured in Settings • 100% On-Device Edge"
+                               FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </VerticalStackLayout>
+                    
+                    <Button Grid.Column="1" Text="⚙️ Settings"
+                            Command="{Binding GoToSettingsCommand}"
+                            IsEnabled="{Binding CanChangeSettings}"
+                            FontSize="12" FontAttributes="Bold"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                            TextColor="{StaticResource Primary}"
+                            CornerRadius="8" HeightRequest="36" Padding="12,0" />
+                </Grid>
+            </Border>
+
+
+
+            <!-- ===================== 2. MODE SWITCHER TABS ===================== -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                    Padding="3"
+                    IsVisible="{Binding CanChangeSettings}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="12" />
                 </Border.StrokeShape>
-                <VerticalStackLayout Spacing="16">
-                    <Label Text="Source Recording" FontSize="16" FontAttributes="Bold" />
+                <Grid ColumnDefinitions="*, *" ColumnSpacing="4">
+                    <Button Grid.Column="0" Text="🎙️ Record Live"
+                            Command="{Binding SelectRecordModeCommand}"
+                            IsEnabled="{Binding CanChangeSettings}"
+                            BackgroundColor="{Binding IsRecordMode, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#6366F1:Transparent'}"
+                            TextColor="{Binding IsRecordMode, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#FFFFFF:#64748B'}"
+                            FontAttributes="Bold" FontSize="13" HeightRequest="40" CornerRadius="8" Padding="0" />
                     
-                    <Border StrokeThickness="1" StrokeDashArray="4,4" Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#4B5563}" BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}" Padding="16">
+                    <Button Grid.Column="1" Text="📁 Import File"
+                            Command="{Binding SelectImportModeCommand}"
+                            IsEnabled="{Binding CanChangeSettings}"
+                            BackgroundColor="{Binding IsImportMode, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#6366F1:Transparent'}"
+                            TextColor="{Binding IsImportMode, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#FFFFFF:#64748B'}"
+                            FontAttributes="Bold" FontSize="13" HeightRequest="40" CornerRadius="8" Padding="0" />
+                </Grid>
+            </Border>
+
+            <!-- ===================== 3. MODE 1: LIVE RECORDING CONSOLE ===================== -->
+            <Border IsVisible="{Binding IsRecordMode}"
+                    StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="16" HorizontalOptions="Fill">
+                    
+                    <!-- Live Recording Status Badge -->
+                    <Border StrokeThickness="0"
+                            BackgroundColor="{Binding IsRecording, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#EF4444:#334155'}"
+                            Padding="14,5" HorizontalOptions="Center">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                            <Label Text="{Binding SelectedFileName}" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" />
-                            <Label Text="Supported: MP3, WAV, M4A, MP4" FontSize="12" TextColor="#6B7280" HorizontalTextAlignment="Center" />
-                            <Button Text="Browse Audio / Video" Command="{Binding PickFileCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" HorizontalOptions="Center" Margin="0,8,0,0" />
+                        <Label Text="{Binding RecordingStatus}"
+                               FontSize="12" FontAttributes="Bold"
+                               TextColor="White" />
+                    </Border>
+
+                    <!-- Big Monospace Digital Timer -->
+                    <Label Text="{Binding FormattedRecordingDuration}"
+                           FontSize="48" FontAttributes="Bold"
+                           FontFamily="Courier New"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+
+                    <!-- 2D Canvas Audio Waveform Visualizer -->
+                    <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                            Padding="6" Margin="0,4">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <GraphicsView x:Name="WaveformCanvas"
+                                      HeightRequest="85"
+                                      HorizontalOptions="FillAndExpand" />
+                    </Border>
+
+                    <!-- Real-Time Input Level Meter -->
+                    <VerticalStackLayout Spacing="4" HorizontalOptions="Fill" Margin="4,0">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0" Text="Microphone Level" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="1" Text="{Binding AudioLevel, StringFormat='{0:P0}'}" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                        </Grid>
+                        <ProgressBar Progress="{Binding AudioLevel}" ProgressColor="{StaticResource Primary}" HeightRequest="6" />
+                    </VerticalStackLayout>
+
+                    <!-- Real-Time Expanded Recognition Stream (Available once recording starts, expanded) -->
+                    <Border IsVisible="{Binding IsRecording}"
+                            StrokeThickness="1"
+                            Stroke="{StaticResource Primary}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                            Padding="14" Margin="0,4,0,0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <HorizontalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
+                                    <Label Text="🔴" FontSize="11" VerticalOptions="Center" />
+                                    <Label Text="Live Realtime Transcription Stream" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="{StaticResource Primary}" Padding="8,2">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="10" />
+                                    </Border.StrokeShape>
+                                    <Label Text="Expanded" FontSize="10" FontAttributes="Bold" TextColor="White" />
+                                </Border>
+                            </Grid>
+                            
+                            <!-- Recognition Items List -->
+                            <CollectionView ItemsSource="{Binding LiveDraftSegments}" HeightRequest="190">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:LiveSegmentItem">
+                                        <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}" Padding="10,6" Margin="0,3">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="8" />
+                                            </Border.StrokeShape>
+                                            <VerticalStackLayout Spacing="2">
+                                                <Grid ColumnDefinitions="Auto, *">
+                                                    <Label Grid.Column="0" Text="{Binding SpeakerDisplayName, StringFormat='[{0}]'}" FontSize="11" FontAttributes="Bold" TextColor="{Binding SpeakerColor}" Margin="0,0,6,0" />
+                                                    <Label Grid.Column="1" Text="{Binding Timestamp}" FontSize="10" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalOptions="End" />
+                                                </Grid>
+                                                <Label Text="{Binding Text}" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray100}}" />
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                                <CollectionView.EmptyView>
+                                    <VerticalStackLayout Padding="24" HorizontalOptions="Center" Spacing="6">
+                                        <Label Text="🎙️ Listening for speech..." FontSize="13" FontAttributes="Italic"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalTextAlignment="Center" />
+                                        <Label Text="Words will appear in real-time as speech is recognized." FontSize="11"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}" HorizontalTextAlignment="Center" />
+                                    </VerticalStackLayout>
+                                </CollectionView.EmptyView>
+                            </CollectionView>
                         </VerticalStackLayout>
                     </Border>
+
+                    <!-- Action Controls: ONLY Record button when idle, ONLY Stop/Done button when recording -->
+                    <VerticalStackLayout Spacing="10" Margin="0,10,0,0">
+                        
+                        <!-- IDLE STATE: Only Record Button visible -->
+                        <VerticalStackLayout IsVisible="{Binding IsRecording, Converter={StaticResource InvertedBoolConverter}}" Spacing="8" HorizontalOptions="Center">
+                            <Button Text="🎙️"
+                                    Command="{Binding StartRecordingCommand}"
+                                    IsEnabled="{Binding HasDownloadedModels}"
+                                    BackgroundColor="{StaticResource Danger}"
+                                    TextColor="White"
+                                    FontSize="30"
+                                    HeightRequest="80"
+                                    WidthRequest="80"
+                                    CornerRadius="40"
+                                    HorizontalOptions="Center" />
+                            <Label Text="Tap to start recording" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+
+                        <!-- ACTIVE RECORDING STATE: ONLY Stop / Done Button visible per user requirement -->
+                        <VerticalStackLayout IsVisible="{Binding IsRecording}" Spacing="8" HorizontalOptions="Center">
+                            <Button Text="■ Stop &amp; Transcribe (Done)"
+                                    Command="{Binding StopAndTranscribeCommand}"
+                                    BackgroundColor="{StaticResource Success}"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    FontSize="15"
+                                    HeightRequest="52"
+                                    WidthRequest="260"
+                                    CornerRadius="26"
+                                    HorizontalOptions="Center" />
+                            <Label Text="Tap to stop and generate finalized high-accuracy transcript" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Configuration Card -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <!-- ===================== 4. MODE 2: FILE IMPORT STUDIO ===================== -->
+            <Border IsVisible="{Binding IsImportMode}"
+                    StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="24">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="20" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="16">
-                    <Label Text="Options" FontSize="16" FontAttributes="Bold" />
-
-                    <Grid ColumnDefinitions="*, *" ColumnSpacing="16">
-                        <VerticalStackLayout Grid.Column="0" Spacing="6">
-                            <Label Text="Language" FontSize="13" TextColor="#6B7280" />
-                            <Picker ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" />
+                    <Label Text="Import Audio / Video" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                    
+                    <Border StrokeThickness="1" StrokeDashArray="4,4"
+                            Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                            Padding="24">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                            <Label Text="🎵" FontSize="36" HorizontalTextAlignment="Center" />
+                            <Label Text="{Binding SelectedFileName}" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                            <Label Text="Supported formats: MP3, WAV, M4A, MP4, FLAC, OGG" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalTextAlignment="Center" />
+                            <Button Text="Browse File..." Command="{Binding PickFileCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" HorizontalOptions="Center" Margin="0,8,0,0" HeightRequest="44" Padding="20,0" CornerRadius="8" />
                         </VerticalStackLayout>
+                    </Border>
 
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <Label Text="Speakers" FontSize="13" TextColor="#6B7280" />
-                            <Picker ItemsSource="{Binding SpeakerCountOptions}" SelectedItem="{Binding SelectedSpeakerCount}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" />
-                        </VerticalStackLayout>
-                    </Grid>
-
-                    <Button Text="Start Transcription" Command="{Binding TranscribeCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InvertedBoolConverter}}" FontAttributes="Bold" HeightRequest="48" Margin="0,12,0,0" />
+                    <Button Text="Start Transcription" Command="{Binding TranscribeFileCommand}" IsEnabled="{Binding HasDownloadedModels}" BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" HeightRequest="48" CornerRadius="10" Margin="0,8,0,0" />
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Progress Card -->
-            <Border IsVisible="{Binding IsProcessing}" StrokeThickness="1" Stroke="#3B82F6" BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E3A8A}" Padding="20">
+            <!-- ===================== 5. PROGRESS & STAGE CARD ===================== -->
+            <Border IsVisible="{Binding IsProcessing}"
+                    StrokeThickness="1" Stroke="{StaticResource Primary}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Gray800}}"
+                    Padding="18">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*, Auto">
-                        <Label Grid.Column="0" Text="{Binding ProgressStage, StringFormat='Stage: {0}'}" FontAttributes="Bold" TextColor="#2563EB" />
-                        <Label Grid.Column="1" Text="{Binding ProgressFraction, StringFormat='{0:P0}'}" FontAttributes="Bold" TextColor="#2563EB" />
+                        <Label Grid.Column="0" Text="{Binding ProgressStage, StringFormat='Stage: {0}'}" FontAttributes="Bold" TextColor="{StaticResource Primary}" FontSize="14" />
+                        <Label Grid.Column="1" Text="{Binding ProgressFraction, StringFormat='{0:P0}'}" FontAttributes="Bold" TextColor="{StaticResource Primary}" FontSize="14" />
                     </Grid>
 
-                    <ProgressBar Progress="{Binding ProgressFraction}" ProgressColor="#2563EB" />
-                    <Label Text="{Binding StatusMessage}" FontSize="13" TextColor="{AppThemeBinding Light=#4B5563, Dark=#D1D5DB}" />
+                    <ProgressBar Progress="{Binding ProgressFraction}" ProgressColor="{StaticResource Primary}" HeightRequest="8" />
+                    <Label Text="{Binding StatusMessage}" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
                 </VerticalStackLayout>
             </Border>
 

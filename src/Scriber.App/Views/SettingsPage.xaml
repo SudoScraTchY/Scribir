@@ -5,87 +5,366 @@
              xmlns:domain="clr-namespace:Scriber.Core.Domain;assembly=Scriber.Core"
              x:Class="Scriber.App.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
-             Title="Settings">
+             Title="Settings"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="24" MaximumWidthRequest="700" HorizontalOptions="Center">
+        <VerticalStackLayout Spacing="20" Padding="20" MaximumWidthRequest="680" HorizontalOptions="Center">
             
-            <Label Text="Settings &amp; Info" FontSize="24" FontAttributes="Bold" />
+            <Label Text="Settings &amp; Diagnostics" FontSize="26" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
 
-            <!-- About Card -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <!-- ========================================================================= -->
+            <!-- AI TRANSCRIPTION & AUDIO PIPELINE ENGINES (PHASE 2 ENGINE CONFIGURATION)  -->
+            <!-- ========================================================================= -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="16">
+                    
+                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                        <Label Grid.Column="0" Text="AI Transcription &amp; Pipeline Engines" FontSize="16" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" VerticalOptions="Center" />
+                        <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="{StaticResource Primary}" Padding="8,4">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Label Text="⚡ 100% On-Device" FontSize="10" FontAttributes="Bold" TextColor="White" />
+                        </Border>
+                    </Grid>
+
+                    <Label Text="Configure the default speech recognition models, language auto-detection, VAD silence filtering, and speaker separation engines. These settings govern all live recording and file import sessions."
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+
+                    <!-- Warning if no models downloaded -->
+                    <Border IsVisible="{Binding HasNoDownloadedModels}"
+                            StrokeThickness="1" Stroke="#F59E0B"
+                            BackgroundColor="{AppThemeBinding Light='#FEF3C7', Dark='#451A03'}"
+                            Padding="12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="⚠️ No Speech Recognition Models Installed" FontSize="12" FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light='#B45309', Dark='#FBBF24'}" />
+                            <Label Text="Please download an on-device model from the Models tab to transcribe audio."
+                                   FontSize="11" TextColor="{AppThemeBinding Light='#92400E', Dark='#FDE68A'}" />
+                            <Button Text="📥 Go to Models Tab" Command="{Binding OpenModelsCommand}"
+                                    BackgroundColor="#D97706" TextColor="White" FontAttributes="Bold"
+                                    HeightRequest="36" CornerRadius="8" HorizontalOptions="Start" Padding="14,0" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- 1. Default ASR Model Picker -->
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasDownloadedModels}">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0" Text="Default Speech Recognition (ASR) Model" FontSize="12" FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                            <Label Grid.Column="1" Text="Downloaded Only" FontSize="11" TextColor="{StaticResource Success}" />
+                        </Grid>
+                        <Border StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                                Padding="12,2">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Picker ItemsSource="{Binding AvailableAsrModels}"
+                                    ItemDisplayBinding="{Binding DisplayName}"
+                                    SelectedItem="{Binding SelectedAsrModel}"
+                                    Title="Select default ASR model..."
+                                    FontSize="13"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- 2. Default Spoken Language Picker -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Default Spoken Language" FontSize="12" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                        <Border StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                                Padding="12,2">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Picker ItemsSource="{Binding AvailableLanguages}"
+                                    ItemDisplayBinding="{Binding DisplayName}"
+                                    SelectedItem="{Binding SelectedLanguageItem}"
+                                    Title="Select language..."
+                                    FontSize="13"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                        </Border>
+                        <Label Text="💡 Whisper models natively auto-detect the spoken language from audio tokens when set to Auto."
+                               FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}" Margin="0,4" />
+
+                    <!-- 3. Voice Activity Detection (VAD) Engine -->
+                    <VerticalStackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                <Label Text="Voice Activity Detection (VAD)" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                <Label Text="Eliminate background noise &amp; silence loops" FontSize="11"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" IsToggled="{Binding EnableVad}"
+                                    OnColor="{StaticResource Primary}" ThumbColor="{StaticResource White}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="6" IsVisible="{Binding EnableVad}">
+                            <Label Text="VAD Engine Architecture" FontSize="12" FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                            <Border StrokeThickness="1"
+                                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                                    Padding="12,2">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="10" />
+                                </Border.StrokeShape>
+                                <Picker ItemsSource="{Binding AvailableVadEngines}"
+                                        SelectedItem="{Binding SelectedVadEngine}"
+                                        FontSize="13"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                            </Border>
+
+                            <!-- Educational Info Box -->
+                            <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light='#EFF6FF', Dark='#1E293B'}" Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Label Text="💡 Why VAD is needed: Whisper is trained on speech and frequently hallucinates repetitive phantom phrases when fed continuous silence or background noise. Silero VAD v5 filters silence in microseconds before inference, cutting CPU and battery usage by 50–70% and preventing hallucinations."
+                                       FontSize="11" TextColor="{AppThemeBinding Light='#1E40AF', Dark='#93C5FD'}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}" Margin="0,4" />
+
+                    <!-- 4. Speaker Diarization Engine -->
+                    <VerticalStackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                <Label Text="Speaker Diarization &amp; Separation" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                <Label Text="Attribute intervals to distinct speakers (Speaker 1, Speaker 2)" FontSize="11"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" IsToggled="{Binding EnableDiarization}"
+                                    OnColor="{StaticResource Primary}" ThumbColor="{StaticResource White}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="8" IsVisible="{Binding EnableDiarization}">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Diarizer Engine" FontSize="12" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                                <Border StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                                        Padding="12,2">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="10" />
+                                    </Border.StrokeShape>
+                                    <Picker ItemsSource="{Binding AvailableDiarizerEngines}"
+                                            SelectedItem="{Binding SelectedDiarizerEngine}"
+                                            FontSize="13"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Expected Speaker Count" FontSize="12" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                                <Border StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                                        Padding="12,2">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="10" />
+                                    </Border.StrokeShape>
+                                    <Picker ItemsSource="{Binding SpeakerCountOptions}"
+                                            SelectedItem="{Binding SelectedSpeakerCount}"
+                                            FontSize="13"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <!-- Educational Info Box -->
+                            <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light='#EFF6FF', Dark='#1E293B'}" Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Label Text="💡 Why Diarization is needed: Whisper only transcribes words without knowing who spoke. Nemotron-3 Diarizer extracts neural voice embeddings to separate turns between speakers. Disable (or choose Passthrough) for solo dictation to maximize processing speed."
+                                       FontSize="11" TextColor="{AppThemeBinding Light='#1E40AF', Dark='#93C5FD'}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}" Margin="0,4" />
+
+                    <!-- 5. Cross-Session Voiceprints & Raw Audio Sourcing -->
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                <Label Text="Cross-Session Voiceprints" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                <Label Text="Automatically recognize enrolled speaker identities" FontSize="11"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" IsToggled="{Binding EnableVoiceprints}"
+                                    OnColor="{StaticResource Primary}" ThumbColor="{StaticResource White}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                <Label Text="Lossless Raw Audio Sourcing" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                <Label Text="Archive 16 kHz WAV audio to allow re-transcribing with newer models" FontSize="11"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" IsToggled="{Binding SaveRawAudio}"
+                                    OnColor="{StaticResource Primary}" ThumbColor="{StaticResource White}" VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- About & Hardware Architecture Card -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="About Scribir" FontSize="16" FontAttributes="Bold" />
-                    <Label Text="{Binding ArchitectureNotes}" FontSize="13" TextColor="#6B7280" />
-                    <Grid ColumnDefinitions="*, Auto" Margin="0,8,0,0">
-                        <Label Grid.Column="0" Text="Version" FontSize="13" />
-                        <Label Grid.Column="1" Text="{Binding Version}" FontSize="13" FontAttributes="Bold" />
+                    <Label Text="About Scribir" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                    <Label Text="{Binding ArchitectureNotes}" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                    
+                    <Grid ColumnDefinitions="*, Auto" Margin="0,4,0,0">
+                        <Label Grid.Column="0" Text="Application Version" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                        <Label Grid.Column="1" Text="{Binding Version}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
                     </Grid>
                 </VerticalStackLayout>
             </Border>
 
             <!-- Storage & Paths Card -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Local Storage &amp; Paths" FontSize="16" FontAttributes="Bold" />
+                    <Label Text="Local Storage &amp; Paths" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
                     
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Database Location" FontSize="12" TextColor="#6B7280" />
-                        <Label Text="{Binding DatabasePath}" FontSize="13" FontAttributes="Bold" LineBreakMode="CharacterWrap" />
+                        <Label Text="SQLite Database Path" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Label Text="{Binding DatabasePath}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" LineBreakMode="CharacterWrap" />
                     </VerticalStackLayout>
 
-                    <VerticalStackLayout Spacing="4" Margin="0,8,0,0">
-                        <Label Text="Models Cache Directory" FontSize="12" TextColor="#6B7280" />
-                        <Label Text="{Binding CacheDirectory}" FontSize="13" FontAttributes="Bold" LineBreakMode="CharacterWrap" />
+                    <VerticalStackLayout Spacing="4" Margin="0,6,0,0">
+                        <Label Text="On-Device Models Directory" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Label Text="{Binding CacheDirectory}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" LineBreakMode="CharacterWrap" />
                     </VerticalStackLayout>
+
+                    <Button Text="Manage AI Models..."
+                            Command="{Binding OpenModelsCommand}"
+                            FontSize="12" Padding="14,6" HeightRequest="34" CornerRadius="8"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                            TextColor="{StaticResource Primary}" FontAttributes="Bold"
+                            HorizontalOptions="Start" Margin="0,4,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Transcription & Review Quality Card (PH1-UI-007) -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Transcription &amp; Review Quality" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                    <Label Text="Configure the confidence threshold for highlighting uncertain words in transcripts. Low-confidence words are subtly marked with an amber underline so you can review and correct them quickly."
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+                    <Grid ColumnDefinitions="*, Auto" Margin="0,4,0,0">
+                        <Label Grid.Column="0" Text="Review Flagging Threshold" FontSize="13" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" VerticalOptions="Center" />
+                        <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#78350F}" Padding="8,3">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="6" />
+                            </Border.StrokeShape>
+                            <Label Text="{Binding ConfidenceThresholdText}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#B45309, Dark=#FDE68A}" />
+                        </Border>
+                    </Grid>
+
+                    <Slider Minimum="0.50" Maximum="0.95" Value="{Binding ConfidenceThreshold}"
+                            MinimumTrackColor="{StaticResource Warning}" ThumbColor="{StaticResource Warning}" />
+
+                    <Grid ColumnDefinitions="*, *">
+                        <Label Grid.Column="0" Text="50% (Flag only very uncertain words)" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Label Grid.Column="1" Text="95% (Flag all borderline words)" FontSize="11" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </Grid>
                 </VerticalStackLayout>
             </Border>
 
             <!-- Enrolled Voiceprints Card (PH2-SPEAKER-004) -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*, Auto">
-                        <Label Grid.Column="0" Text="Enrolled Voiceprints" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
-                        <Button Grid.Column="1" Text="Refresh" Command="{Binding LoadVoiceprintsCommand}" FontSize="12" Padding="8,4" HeightRequest="32" />
+                        <Label Grid.Column="0" Text="Biometric Voiceprints" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                        <Button Grid.Column="1" Text="Refresh" Command="{Binding LoadVoiceprintsCommand}" FontSize="12" Padding="12,4" HeightRequest="32" CornerRadius="6" BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
                     </Grid>
-                    <Label Text="On-device biometric profiles used for cross-session speaker matching (ADR-0010)." FontSize="12" TextColor="#6B7280" />
+                    <Label Text="On-device biometric profiles used for cross-session speaker matching (ADR-0010). Strictly preserved in local SQLite storage." FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
 
                     <CollectionView ItemsSource="{Binding EnrolledVoiceprints}">
                         <CollectionView.EmptyView>
-                            <Label Text="No voiceprints enrolled yet. You can enroll speakers directly from any transcript." FontSize="13" TextColor="#9CA3AF" Padding="0,12" />
+                            <Label Text="No voiceprints enrolled yet. You can enroll speakers directly from any transcript." FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" Padding="0,12" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="domain:Voiceprint">
-                                <Border StrokeThickness="1" Stroke="#E5E7EB" Padding="12" Margin="0,4">
+                                <Border StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                                        Padding="12" Margin="0,4">
                                     <Border.StrokeShape>
                                         <RoundRectangle CornerRadius="8" />
                                     </Border.StrokeShape>
                                     <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
-                                        <Label Grid.Row="0" Grid.Column="0" Text="{Binding DisplayName}" FontSize="14" FontAttributes="Bold" />
-                                        <Label Grid.Row="1" Grid.Column="0" Text="{Binding CreatedAt, StringFormat='Enrolled: {0:MMM dd, yyyy}'}" FontSize="11" TextColor="#6B7280" />
+                                        <Label Grid.Row="0" Grid.Column="0" Text="{Binding DisplayName}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                                        <Label Grid.Row="1" Grid.Column="0" Text="{Binding CreatedAt, StringFormat='Enrolled: {0:MMM dd, yyyy}'}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                                         
                                         <HorizontalStackLayout Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Spacing="6" VerticalOptions="Center">
                                             <Button Text="Rename"
                                                     Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=RenameVoiceprintCommand}"
                                                     CommandParameter="{Binding .}"
-                                                    FontSize="11" HeightRequest="30" Padding="8,2" />
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" CornerRadius="6"
+                                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
                                             <Button Text="Merge"
                                                     Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=MergeVoiceprintCommand}"
                                                     CommandParameter="{Binding .}"
-                                                    FontSize="11" HeightRequest="30" Padding="8,2" BackgroundColor="#4B5563" TextColor="White" />
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" CornerRadius="6"
+                                                    BackgroundColor="{StaticResource Primary}" TextColor="White" />
                                             <Button Text="Delete"
                                                     Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=DeleteVoiceprintCommand}"
                                                     CommandParameter="{Binding .}"
-                                                    FontSize="11" HeightRequest="30" Padding="8,2" BackgroundColor="#DC2626" TextColor="White" />
+                                                    FontSize="11" HeightRequest="30" Padding="8,2" CornerRadius="6"
+                                                    BackgroundColor="{StaticResource Danger}" TextColor="White" />
                                         </HorizontalStackLayout>
                                     </Grid>
                                 </Border>
@@ -96,33 +375,36 @@
             </Border>
 
             <!-- BYOK AI Provider Card (PH2-INT-001) -->
-            <Border StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="20">
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12" />
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="14">
-                    <Label Text="AI Provider &amp; Integrations (BYOK)" FontSize="16" FontAttributes="Bold" />
+                    <Label Text="AI Provider &amp; Integrations (BYOK)" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
                     <Label Text="Optional: Configure an OpenAI-compatible endpoint for summarization and agent tooling (ADR-0007). Works with local LAN models (Ollama, LM Studio, vLLM) or commercial APIs. Core transcription runs 100% offline regardless of this setting."
-                           FontSize="12" TextColor="#6B7280" />
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
 
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Base URL" FontSize="12" FontAttributes="Bold" />
+                        <Label Text="Base URL" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
                         <Entry Text="{Binding BaseUrl}" Placeholder="http://localhost:11434/v1 or https://api.openai.com/v1" FontSize="13" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="API Key (Optional for local LAN models)" FontSize="12" FontAttributes="Bold" />
+                        <Label Text="API Key (Optional for local LAN models)" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
                         <Entry Text="{Binding ApiKey}" IsPassword="True" Placeholder="sk-..." FontSize="13" />
                     </VerticalStackLayout>
 
                     <Grid ColumnDefinitions="*, 100" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Model Name" FontSize="12" FontAttributes="Bold" />
+                            <Label Text="Model Name" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
                             <Entry Text="{Binding ModelName}" Placeholder="e.g. llama3, mistral, gpt-4o-mini" FontSize="13" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="1" Spacing="4">
-                            <Label Text="Timeout (s)" FontSize="12" FontAttributes="Bold" />
+                            <Label Text="Timeout (s)" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
                             <Entry Text="{Binding TimeoutSeconds}" Keyboard="Numeric" FontSize="13" />
                         </VerticalStackLayout>
                     </Grid>
@@ -130,18 +412,19 @@
                     <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
                         <Button Text="Save Settings"
                                 Command="{Binding SaveProviderSettingsCommand}"
-                                FontSize="13" Padding="14,8"
-                                BackgroundColor="#2563EB" TextColor="White" />
+                                FontSize="13" Padding="16,8" CornerRadius="8"
+                                BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" />
 
                         <Button Text="Test Connection"
                                 Command="{Binding TestConnectionCommand}"
-                                FontSize="13" Padding="14,8"
-                                BackgroundColor="#4B5563" TextColor="White" />
+                                FontSize="13" Padding="16,8" CornerRadius="8"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
                     </HorizontalStackLayout>
 
                     <Label Text="{Binding ConnectionStatus}"
-                           IsVisible="{Binding ConnectionStatus, Converter={x:Null}}"
-                           FontSize="12" TextColor="#2563EB" Margin="0,4,0,0" />
+                           IsVisible="{Binding ConnectionStatus, Converter={StaticResource StringNotEmptyConverter}}"
+                           FontSize="12" TextColor="{StaticResource Primary}" Margin="0,4,0,0" />
                 </VerticalStackLayout>
             </Border>
 

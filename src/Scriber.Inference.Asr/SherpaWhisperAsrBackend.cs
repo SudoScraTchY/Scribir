@@ -18,7 +18,7 @@ public sealed class SherpaWhisperAsrBackend : IAsrBackend, IDisposable
 
     private static readonly string[] WhisperLanguages =
     [
-        "en", "fa", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt",
+        "auto", "en", "fa", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt",
         "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi",
         "vi", "he", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta",
         "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy",
@@ -59,7 +59,8 @@ public sealed class SherpaWhisperAsrBackend : IAsrBackend, IDisposable
         recognizerConfig.FeatConfig.SampleRate = SampleRate;
         recognizerConfig.ModelConfig.Whisper.Encoder = config.EncoderPath;
         recognizerConfig.ModelConfig.Whisper.Decoder = config.DecoderPath;
-        recognizerConfig.ModelConfig.Whisper.Language = config.Language;
+        // In sherpa-onnx, passing empty string activates native Whisper automatic language detection
+        recognizerConfig.ModelConfig.Whisper.Language = string.Equals(config.Language, "auto", StringComparison.OrdinalIgnoreCase) ? "" : config.Language;
         recognizerConfig.ModelConfig.Whisper.Task = config.Task;
         recognizerConfig.ModelConfig.Whisper.EnableTokenTimestamps = 1;
         recognizerConfig.ModelConfig.Tokens = config.TokensPath;

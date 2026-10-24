@@ -136,4 +136,45 @@ public class TranscriptionPipelineTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             pipeline.ProcessAsync("dummy.wav", ct: cts.Token));
     }
+
+    private sealed class MockSpeakerEmbedder : Scriber.Core.Inference.ISpeakerEmbedder
+    {
+        public int EmbeddingDimension => 4;
+        public Task<float[]> ExtractEmbeddingAsync(AudioBuffer segment, CancellationToken ct = default)
+        {
+            return Task.FromResult(new float[] { 1f, 0f, 0f, 0f });
+        }
+        public void Dispose() { }
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WithSpeakerEmbedderAndVoiceprints_MatchesEnrolledSpeakers()
+    {
+        var voiceprintId = Guid.NewGuid();
+        var voiceprint = new Voiceprint(
+            id: voiceprintId,
+            displayName: "Dr. Alice Smith",
+            embedding: new float[] { 1f, 0f, 0f, 0f },
+            createdAt: DateTimeOffset.UtcNow);
+
+        var pipeline = new TranscriptionPipeline(
+            decoder: new MockAudioDecoder(),
+            diarizer: new MockDiarizer(),
+            asr: new MockAsrBackend(),
+            aligner: new TranscriptAligner(),
+            normalizer: new PersianTextNormalizer(),
+            speakerEmbedder: new MockSpeakerEmbedder(),
+            speakerMatcher: new Scriber.Inference.SpeakerId.SpeakerMatcher(0.60f),
+            knownVoiceprints: [voiceprint]);
+
+        var options = new TranscriptionPipelineOptions { Title = "Voiceprint Match Test" };
+        var transcript = await pipeline.ProcessAsync("test.wav", options);
+
+        Assert.NotNull(transcript);
+        Assert.Equal(2, transcript.Speakers.Count);
+
+        var alice = transcript.Speakers.FirstOrDefault(s => s.DisplayName == "Dr. Alice Smith");
+        Assert.NotNull(alice);
+        Assert.Equal(voiceprintId, alice.VoiceprintId);
+    }
 }

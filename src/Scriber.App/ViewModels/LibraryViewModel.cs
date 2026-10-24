@@ -109,7 +109,7 @@ public sealed class LibraryViewModel : BaseViewModel
 
     private async Task DeleteTranscriptAsync(Guid id)
     {
-        bool confirm = await Shell.Current.DisplayAlert(
+        bool confirm = await Shell.Current.DisplayAlertAsync(
             "Delete Transcript",
             "Are you sure you want to delete this transcript? This action cannot be undone.",
             "Delete",

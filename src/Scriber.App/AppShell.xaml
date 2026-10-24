@@ -4,20 +4,20 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Scriber.App.Views"
-    Title="Scribir">
+    Title="Scribir"
+    Shell.BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+    Shell.ForegroundColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+    Shell.TitleColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+    Shell.TabBarForegroundColor="{StaticResource Primary}"
+    Shell.TabBarTitleColor="{StaticResource Primary}"
+    Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}">
 
     <TabBar>
-        <Tab Title="Transcribe" Route="transcribe">
-            <ShellContent ContentTemplate="{DataTemplate views:TranscribePage}" />
-        </Tab>
-
-        <Tab Title="Library" Route="library">
-            <ShellContent ContentTemplate="{DataTemplate views:LibraryPage}" />
-        </Tab>
-
-        <Tab Title="Settings" Route="settings">
-            <ShellContent ContentTemplate="{DataTemplate views:SettingsPage}" />
-        </Tab>
+        <ShellContent Title="Transcribe" Icon="tab_mic.png" Route="transcribe" ContentTemplate="{DataTemplate views:TranscribePage}" />
+        <ShellContent Title="Library" Icon="tab_library.png" Route="library" ContentTemplate="{DataTemplate views:LibraryPage}" />
+        <ShellContent Title="Models" Icon="tab_models.png" Route="models" ContentTemplate="{DataTemplate views:ModelsPage}" />
+        <ShellContent Title="Settings" Icon="tab_settings.png" Route="settings" ContentTemplate="{DataTemplate views:SettingsPage}" />
     </TabBar>
 
 </Shell>

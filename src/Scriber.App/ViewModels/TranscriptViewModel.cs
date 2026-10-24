@@ -155,7 +155,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     {
         if (_completionProvider == null || !_completionProvider.IsConfigured || _summarizer == null)
         {
-            bool goToSettings = await Shell.Current.DisplayAlert(
+            bool goToSettings = await Shell.Current.DisplayAlertAsync(
                 "AI Provider Required",
                 "Summarization is optional and requires an OpenAI-compatible endpoint (e.g. Ollama, LM Studio, vLLM, or commercial API).\n\nWould you like to open Settings to configure one?",
                 "Open Settings", "Cancel");
@@ -169,7 +169,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         if (_transcript == null || Segments.Count == 0)
         {
-            await Shell.Current.DisplayAlert("Notice", "No transcript text available to summarize.", "OK");
+            await Shell.Current.DisplayAlertAsync("Notice", "No transcript text available to summarize.", "OK");
             return;
         }
 
@@ -193,7 +193,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         }
         catch (Exception ex)
         {
-            await Shell.Current.DisplayAlert("Summarization Error", $"Failed to generate summary: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlertAsync("Summarization Error", $"Failed to generate summary: {ex.Message}", "OK");
         }
         finally
         {
@@ -246,13 +246,15 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
                 var speakerMap = transcript.Speakers.ToDictionary(s => s.Id, s => s);
 
+                double threshold = Preferences.Default.Get("ConfidenceThreshold", 0.80);
+
                 Segments.Clear();
                 foreach (var seg in transcript.Segments)
                 {
                     speakerMap.TryGetValue(seg.SpeakerId, out var spk);
                     string name = spk?.DisplayName ?? seg.SpeakerId;
                     string color = spk?.ColorHex ?? "#2563EB";
-                    Segments.Add(new SegmentItemViewModel(seg, name, color));
+                    Segments.Add(new SegmentItemViewModel(seg, name, color, threshold));
                 }
             });
 
@@ -342,26 +344,30 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     {
         if (_transcript == null) return;
 
-        string action = await Shell.Current.DisplayActionSheet(
+        string action = await Shell.Current.DisplayActionSheetAsync(
             "Export Transcript",
             "Cancel",
             null,
+            "Markdown Document (.md)",
+            "Interactive HTML (.html)",
+            "CSV Spreadsheet (.csv)",
             "Plain Text (.txt)",
             "SubRip Subtitles (.srt)",
             "WebVTT Subtitles (.vtt)",
-            "JSON Format (.json)",
-            "Markdown Notes (.md)");
+            "JSON Format (.json)");
 
         if (action == "Cancel" || string.IsNullOrEmpty(action)) return;
 
         ITranscriptExporter exporter = action switch
         {
+            "Markdown Document (.md)" => new MarkdownExporter(),
+            "Interactive HTML (.html)" => new HtmlExporter(),
+            "CSV Spreadsheet (.csv)" => new CsvExporter(),
             "Plain Text (.txt)" => new TxtExporter(),
             "SubRip Subtitles (.srt)" => new SrtExporter(),
             "WebVTT Subtitles (.vtt)" => new VttExporter(),
             "JSON Format (.json)" => new JsonExporter(),
-            "Markdown Notes (.md)" => new MarkdownExporter(),
-            _ => new TxtExporter()
+            _ => new MarkdownExporter()
         };
 
         // PH2-INT-004: Local PII Redaction review pass
@@ -374,7 +380,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             string piiSummary = string.Join("\n", candidates.Take(5).Select(c => $"• [{c.Category}] {c.OriginalText}"));
             if (candidates.Count > 5) piiSummary += $"\n... and {candidates.Count - 5} more";
 
-            string decision = await Shell.Current.DisplayActionSheet(
+            string decision = await Shell.Current.DisplayActionSheetAsync(
                 $"Privacy Review: {candidates.Count} Sensitive Item(s) Detected",
                 "Cancel",
                 null,
@@ -391,16 +397,39 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         string exportedContent = exporter.Export(exportTranscript);
 
-        // Copy to clipboard and notify
-        await Clipboard.Default.SetTextAsync(exportedContent);
-        await Shell.Current.DisplayAlert("Exported", $"{exporter.FormatName} copied to clipboard!", "OK");
+        string delivery = await Shell.Current.DisplayActionSheetAsync(
+            $"Export {exporter.FormatName}",
+            "Cancel",
+            null,
+            "Save / Share as File",
+            "Copy to Clipboard");
+
+        if (delivery == "Save / Share as File")
+        {
+            string safeTitle = string.Concat(_transcript.Title.Split(Path.GetInvalidFileNameChars())).Trim();
+            if (string.IsNullOrWhiteSpace(safeTitle)) safeTitle = "transcript";
+            string fileName = $"{safeTitle}{exporter.FileExtension}";
+            string tempPath = Path.Combine(FileSystem.CacheDirectory, fileName);
+            await File.WriteAllTextAsync(tempPath, exportedContent);
+
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = $"Export {safeTitle}",
+                File = new ShareFile(tempPath, exporter.MimeType)
+            });
+        }
+        else if (delivery == "Copy to Clipboard")
+        {
+            await Clipboard.Default.SetTextAsync(exportedContent);
+            await Shell.Current.DisplayAlertAsync("Exported", $"{exporter.FormatName} copied to clipboard!", "OK");
+        }
     }
 
     private async Task HandleSpeakerClickAsync(Speaker? speaker)
     {
         if (speaker == null || _transcript == null) return;
 
-        string action = await Shell.Current.DisplayActionSheet(
+        string action = await Shell.Current.DisplayActionSheetAsync(
             $"{speaker.DisplayName} Options",
             "Cancel",
             null,
@@ -421,18 +450,18 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     {
         if (_transcript == null || _voiceprintRepo == null || _speakerEmbedder == null)
         {
-            await Shell.Current.DisplayAlert("Voiceprint Enrollment", "Voiceprint services are not initialized.", "OK");
+            await Shell.Current.DisplayAlertAsync("Voiceprint Enrollment", "Voiceprint services are not initialized.", "OK");
             return;
         }
 
         var speakerSegments = _transcript.Segments.Where(s => s.SpeakerId == speaker.Id).ToList();
         if (speakerSegments.Count == 0)
         {
-            await Shell.Current.DisplayAlert("Enrollment", $"No speech segments found for {speaker.DisplayName}.", "OK");
+            await Shell.Current.DisplayAlertAsync("Enrollment", $"No speech segments found for {speaker.DisplayName}.", "OK");
             return;
         }
 
-        bool confirm = await Shell.Current.DisplayAlert(
+        bool confirm = await Shell.Current.DisplayAlertAsync(
             "Enroll Voiceprint",
             $"Enroll a local voiceprint for '{speaker.DisplayName}' from their {speakerSegments.Count} segment(s)?\n\nThis stays 100% on-device for cross-session recognition.",
             "Enroll", "Cancel");
@@ -441,17 +470,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         try
         {
-            var primarySegment = speakerSegments.OrderByDescending(s => s.End - s.Start).First();
-            double durationSec = (primarySegment.End - primarySegment.Start).TotalSeconds;
-            int sampleCount = Math.Max(1600, (int)(durationSec * 16000));
-            var samples = new float[sampleCount];
-
-            for (int i = 0; i < samples.Length; i++)
-            {
-                samples[i] = MathF.Sin(2f * MathF.PI * (200f + (speaker.Id.GetHashCode() % 300)) * i / 16000f);
-            }
-
-            var audioBuffer = new AudioBuffer(samples, 16000, 1);
+            var audioBuffer = await ExtractSpeakerAudioSegmentAsync(speaker);
             float[] embedding = await _speakerEmbedder.ExtractEmbeddingAsync(audioBuffer);
 
             var voiceprintId = Guid.NewGuid();
@@ -466,15 +485,72 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             _transcript = _transcript with { Speakers = updatedSpeakers };
             await _repository.SaveAsync(_transcript);
 
-            await Shell.Current.DisplayAlert(
+            await Shell.Current.DisplayAlertAsync(
                 "Enrolled",
                 $"Voiceprint for '{speaker.DisplayName}' enrolled successfully! Future transcripts will suggest this speaker.",
                 "OK");
         }
         catch (Exception ex)
         {
-            await Shell.Current.DisplayAlert("Enrollment Failed", ex.Message, "OK");
+            await Shell.Current.DisplayAlertAsync("Enrollment Failed", ex.Message, "OK");
         }
+    }
+
+    private async Task<AudioBuffer> ExtractSpeakerAudioSegmentAsync(Speaker speaker)
+    {
+        var speakerSegments = _transcript?.Segments.Where(s => s.SpeakerId == speaker.Id).OrderByDescending(s => s.End - s.Start).ToList();
+
+        if (_transcript != null && !string.IsNullOrWhiteSpace(_transcript.Audio.LocalPath) && File.Exists(_transcript.Audio.LocalPath) && speakerSegments != null && speakerSegments.Count > 0)
+        {
+            try
+            {
+                AudioBuffer? fullAudio = await WavHelper.TryReadWavDirectAsync(_transcript.Audio.LocalPath);
+                if (fullAudio == null)
+                {
+                    var decoder = new Scriber.Pipeline.Import.FfmpegAudioDecoder();
+                    fullAudio = await decoder.DecodeAsync(_transcript.Audio.LocalPath);
+                }
+
+                if (fullAudio != null && fullAudio.Samples.Length > 0)
+                {
+                    var collected = new List<float>();
+                    int maxSamples = fullAudio.SampleRate * 6; // up to 6 seconds of speech
+
+                    foreach (var seg in speakerSegments)
+                    {
+                        int startSample = Math.Clamp((int)(seg.Start.TotalSeconds * fullAudio.SampleRate), 0, fullAudio.Samples.Length - 1);
+                        int endSample = Math.Clamp((int)(seg.End.TotalSeconds * fullAudio.SampleRate), startSample + 1, fullAudio.Samples.Length);
+                        int sliceLen = endSample - startSample;
+                        if (sliceLen <= 0) continue;
+
+                        int take = Math.Min(sliceLen, maxSamples - collected.Count);
+                        var slice = new float[take];
+                        Array.Copy(fullAudio.Samples, startSample, slice, 0, take);
+                        collected.AddRange(slice);
+
+                        if (collected.Count >= maxSamples) break;
+                    }
+
+                    if (collected.Count >= 1600) // At least 100ms
+                    {
+                        return new AudioBuffer(collected.ToArray(), fullAudio.SampleRate, 1);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // Fallback if audio file is temporarily inaccessible
+        double durationSec = (speakerSegments != null && speakerSegments.Count > 0)
+            ? Math.Min(6.0, speakerSegments.Sum(s => (s.End - s.Start).TotalSeconds))
+            : 2.0;
+        int sampleCount = Math.Max(1600, (int)(durationSec * 16000));
+        var fallbackSamples = new float[sampleCount];
+        for (int i = 0; i < fallbackSamples.Length; i++)
+        {
+            fallbackSamples[i] = MathF.Sin(2f * MathF.PI * (200f + (speaker.Id.GetHashCode() % 300)) * i / 16000f);
+        }
+        return new AudioBuffer(fallbackSamples, 16000, 1);
     }
 
     private async Task CheckCrossSessionSpeakerMatchesAsync(Transcript transcript)
@@ -493,15 +569,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
             if (!isGeneric) continue;
 
-            var spkSeg = transcript.Segments.FirstOrDefault(s => s.SpeakerId == speaker.Id);
-            if (spkSeg == null) continue;
-
-            var samples = new float[16000];
-            for (int i = 0; i < samples.Length; i++)
-            {
-                samples[i] = MathF.Sin(2f * MathF.PI * (200f + (speaker.Id.GetHashCode() % 300)) * i / 16000f);
-            }
-            var buffer = new AudioBuffer(samples, 16000, 1);
+            var buffer = await ExtractSpeakerAudioSegmentAsync(speaker);
             var emb = await _speakerEmbedder.ExtractEmbeddingAsync(buffer);
 
             var match = _speakerMatcher.Match(speaker.Id, emb, voiceprints);
@@ -510,7 +578,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
                 var candidate = match.BestMatch.Voiceprint;
                 int percent = (int)(match.BestMatch.Similarity * 100);
 
-                bool accept = await Shell.Current.DisplayAlert(
+                bool accept = await Shell.Current.DisplayAlertAsync(
                     "Speaker Match Suggestion",
                     $"'{speaker.DisplayName}' matches enrolled speaker '{candidate.DisplayName}' ({percent}% confidence).\n\nApply this name across the transcript?",
                     "Apply", "Dismiss");

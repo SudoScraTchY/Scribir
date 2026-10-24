@@ -137,4 +137,22 @@ public class ModelManifestTests
         var ex = Assert.Throws<InvalidOperationException>(() => ModelManifestValidator.ValidateEntry(entry));
         Assert.Contains("measured_wer", ex.Message);
     }
+
+    [Fact]
+    public void ModelCatalogService_LoadsAndValidatesCatalogSuccessfully()
+    {
+        var service = new ModelCatalogService();
+        var catalog = service.GetCatalog();
+
+        Assert.NotNull(catalog);
+        Assert.Equal("1.0", catalog.SchemaVersion);
+        Assert.True(catalog.Models.Count >= 4);
+
+        var whisper = catalog.Models.FirstOrDefault(m => m.Id == "sherpa-whisper-small-int8");
+        Assert.NotNull(whisper);
+        Assert.Equal("Apache-2.0", whisper.License);
+        Assert.Equal("medium", whisper.DeviceTierRecommendation);
+        Assert.True(whisper.SizeBytes > 0);
+        Assert.NotEmpty(whisper.Files);
+    }
 }

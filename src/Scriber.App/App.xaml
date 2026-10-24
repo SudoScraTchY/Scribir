@@ -13,6 +13,11 @@
 
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:ColorHexConverter x:Key="ColorHexConverter" />
+            <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter" />
+            <converters:BoolToValueConverter x:Key="BoolToValueConverter" />
+            <converters:BoolToValueConverter x:Key="PlayPauseTextConverter" TrueValue="⏸ Pause" FalseValue="▶ Play" />
+            <converters:BoolToValueConverter x:Key="RecordPauseTextConverter" TrueValue="▶ Resume" FalseValue="⏸ Pause" />
+            <converters:BoolToValueConverter x:Key="EditSaveTextConverter" TrueValue="Done" FalseValue="Edit" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

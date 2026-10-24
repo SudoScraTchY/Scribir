@@ -16,14 +16,34 @@ public record TranscriptionPipelineOptions
     public string? Title { get; init; }
 
     /// <summary>
-    /// ISO language code (e.g., "en", "fa"). Defaults to "en".
+    /// ISO language code (e.g., "en", "fa", "auto"). Defaults to "auto".
     /// </summary>
-    public string LanguageCode { get; init; } = "en";
+    public string LanguageCode { get; init; } = "auto";
 
     /// <summary>
-    /// Whether to run Voice Activity Detection to inspect speech ranges. Defaults to false.
+    /// Selected model identifier from the model catalog. Defaults to "sherpa-whisper-small-int8".
     /// </summary>
-    public bool EnableVad { get; init; } = false;
+    public string ModelId { get; init; } = "sherpa-whisper-small-int8";
+
+    /// <summary>
+    /// Whether to preserve the raw audio file session for re-transcription with other models and voiceprint reference.
+    /// </summary>
+    public bool SaveRawAudio { get; init; } = true;
+
+    /// <summary>
+    /// Whether to run Voice Activity Detection to inspect speech ranges. Defaults to true.
+    /// </summary>
+    public bool EnableVad { get; init; } = true;
+
+    /// <summary>
+    /// Whether to run multi-speaker diarization to attribute turns. If false or model absent, falls back to single-speaker pass.
+    /// </summary>
+    public bool EnableDiarization { get; init; } = true;
+
+    /// <summary>
+    /// Whether to perform cross-session speaker voiceprint matching and enrollment. Defaults to true.
+    /// </summary>
+    public bool EnableVoiceprints { get; init; } = true;
 
     /// <summary>
     /// Options for VAD pass when enabled.

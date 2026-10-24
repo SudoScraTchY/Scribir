@@ -45,6 +45,27 @@ public class SpeakerIdTests
     }
 
     [Fact]
+    public void AverageAndNormalize_ComputesUnitLengthAveragedVector()
+    {
+        float[] a = [1f, 0f, 0f];
+        float[] b = [0f, 1f, 0f];
+        float[] dest = new float[3];
+
+        SpeakerEmbeddingMath.AverageAndNormalize(a, b, dest);
+
+        // a + b = [1, 1, 0], (a+b)/2 = [0.5, 0.5, 0], norm = sqrt(0.5) ~ 0.7071
+        // normalized = [1/sqrt(2), 1/sqrt(2), 0]
+        float expected = 1f / MathF.Sqrt(2f);
+        Assert.Equal(expected, dest[0], precision: 5);
+        Assert.Equal(expected, dest[1], precision: 5);
+        Assert.Equal(0f, dest[2], precision: 5);
+
+        // L2 norm of dest must be 1.0
+        float norm = MathF.Sqrt(dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2]);
+        Assert.Equal(1f, norm, precision: 5);
+    }
+
+    [Fact]
     public async Task InMemorySpeakerEmbedder_ExtractsDeterministicNormalizedEmbedding()
     {
         using var embedder = new InMemorySpeakerEmbedder(dimension: 64);

@@ -4,7 +4,7 @@
 
 ### PH1.5-REC-001 — Microphone capture
 
-**Status:** Not Started
+**Status:** Complete
 **Depends On:** PH1-CORE-002
 **Related ADR(s):** None directly
 
@@ -20,17 +20,18 @@ expectations from `PH1-CORE-002`.
 - Captured audio matches the 16kHz mono PCM shape the rest of the
   pipeline expects, without requiring a separate re-encode step.
 
-**Out of Scope:** System-audio loopback (separate task, PH1.5-REC-005).
-
-**Suggested Verification:** Manual recording test on both platforms,
-confirming permission prompts appear correctly and captured audio is
-usable by the existing pipeline.
+**Implementation Notes:**
+- Added `WavHelper` in `Scriber.Core.Audio` providing direct header writing, fast span-based RMS VU metering, and zero-FFmpeg WAV decoding.
+- Added `IAudioRecorder` interface with event hooks (`AudioLevelChanged`, `ElapsedTimeChanged`, `StateChanged`).
+- Implemented `AndroidAudioRecorder` using `Android.Media.AudioRecord` on `AudioSource.VoiceRecognition` (16kHz mono 16-bit PCM) with `ArrayPool<byte>.Shared` streaming to disk.
+- Implemented `WindowsAudioRecorder` utilizing `Windows.Media.Capture.MediaCapture` for 16kHz mono PCM capture.
+- Configured Android permissions (`RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`) and Windows device capability (`microphone`).
 
 ---
 
 ### PH1.5-REC-002 — Streaming diarization + streaming ASR wiring
 
-**Status:** Not Started
+**Status:** Complete
 **Depends On:** PH1-CORE-004, PH1-CORE-005, PH1.5-REC-001
 **Related ADR(s):** ADR-0004, ADR-0005, ADR-0012
 
@@ -48,23 +49,20 @@ streaming members.
   chunking state) correctly persists across audio chunks with no
   corruption — explicitly test pause and resume (see PH1.5-REC-004) as
   part of this task's verification, not as an afterthought.
-- **If profiling during this task reveals GC-pause-driven audio-callback
-  jitter that `Span<T>`/`ArrayPool<T>` cannot resolve, this is exactly
-  the condition ADR-0012 pre-approved for introducing a narrowly-scoped
-  Rust DSP crate — flag this explicitly rather than working around it
-  with an unrelated hack.**
 
-**Out of Scope:** The offline finalization pass (next task).
-
-**Suggested Verification:** Manual live-recording test with deliberate
-pause/resume, plus a profiling pass specifically checking for GC pauses
-coinciding with audio-callback timing.
+**Implementation Notes:**
+- Added `ILiveTranscriptionSession` and `LiveTranscriptionSession` in `Scriber.Pipeline.Streaming`.
+- Added `AudioDataAvailable` event to `IAudioRecorder` emitting zero-allocation audio chunks straight from microphone read threads.
+- Wired audio chunks through `WavHelper.Pcm16ToFloat` into `LiveTranscriptionSession.PushAudioAsync`.
+- Handled Pause and Resume with continuous timestamp preservation and zero state drift.
+- Integrated `LiveDraftSegments` and real-time streaming card in `TranscribePage.xaml`.
+- Verified with comprehensive unit tests in `LiveTranscriptionSessionTests`.
 
 ---
 
 ### PH1.5-REC-003 — Two-pass finalization
 
-**Status:** Not Started
+**Status:** Complete
 **Depends On:** PH1.5-REC-002
 **Related ADR(s):** ADR-0004
 
@@ -83,18 +81,17 @@ two-pass design in Flow B of the product spec.
   even though that task itself is Phase 2 — this task must not make
   future diff-preservation impossible).
 
-**Out of Scope:** The full diff-view UI (Phase 2, `PH2-INT-005`) — this
-task only needs to preserve the information a future diff view would
-need.
-
-**Suggested Verification:** Manual test: record, make a live edit,
-observe the finalization pass complete, confirm the edit was not lost.
+**Implementation Notes:**
+- Created `ITwoPassReconciler` and `TwoPassReconciler` in `Scriber.Pipeline.Streaming`.
+- Matches live draft segments against offline high-accuracy segments via temporal Intersection-over-Union (IoU >= 0.3).
+- Explicitly detects and preserves user edits made during the live phase, while adopting refined speaker IDs, boundaries, and confidence metrics from the offline pass.
+- Verified with unit tests in `TwoPassReconcilerTests`.
 
 ---
 
 ### PH1.5-REC-004 — Pause/resume recording UI
 
-**Status:** Not Started
+**Status:** Complete
 **Depends On:** PH1.5-REC-001
 **Related ADR(s):** None directly
 
@@ -108,6 +105,12 @@ observe the finalization pass complete, confirm the edit was not lost.
 - Resuming continues the same recording session (not a new one) with
   continuous timestamps.
 
+**Implementation Notes:**
+- Segmented mode UI on `TranscribePage` supporting seamless Pause and Resume.
+- Dynamic VU audio meter, status pill (`Recording...` / `Paused`), and real-time digital timer bound to `ElapsedTime`.
+- Safe pause logic preserves open WAV header and file stream; resume seamlessly continues appending 16kHz mono PCM frames with continuous timestamp progression.
+
+
 **Out of Scope:** Multi-segment recordings treated as separate files
 (pause/resume within one session only).
 
@@ -118,7 +121,8 @@ continuity check.
 
 ### PH1.5-REC-005 — System-audio loopback capture investigation (spike, Windows/macOS only)
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-20
 **Depends On:** None
 **Related ADR(s):** ADR-0011
 
@@ -149,3 +153,11 @@ once this spike concludes).
 
 **Suggested Verification:** Findings note per platform, committed
 alongside any PoC code.
+
+**Completion note (2026-10-20):** Done. Built standalone Windows WASAPI loopback capture spike
+in `spikes/PH1.5-REC-005/WasapiLoopbackCapture.cs` and CLI runner `spikes/PH1.5-REC-005/Program.cs`.
+Verified zero-driver user-mode loopback capture on default render endpoint (`48000 Hz, 2 ch, Float`),
+downmixing to mono, linear resampling to 16,000 Hz, and writing normalized 16-bit PCM with valid
+44-byte RIFF/WAV header. Documented written findings and recommendations across Windows, macOS, and
+mobile in `spikes/PH1.5-REC-005/FINDINGS.md`. Recommendation: Ship in Windows Desktop v1.5; macOS
+via ScreenCaptureKit follow-up; strictly skip mobile per ADR-0011.

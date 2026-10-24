@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Numerics.Tensors;
 
 namespace Scriber.Inference.Diarization.Internal;
 
@@ -58,6 +59,7 @@ internal sealed class MelFrontend
         var mel = new float[valid, MelBins];
         var buf = new Complex[NFft];
         var spec = new Complex[NFft];
+        Span<float> power = stackalloc float[257];
 
         for (int f = 0; f < valid; f++)
         {
@@ -70,17 +72,19 @@ internal sealed class MelFrontend
             }
             Fft512(buf, spec);
 
+            for (int k = 0; k < 257; k++)
+            {
+                float re = (float)spec[k].Real;
+                float im = (float)spec[k].Imaginary;
+                power[k] = re * re + im * im;
+            }
+
+            ReadOnlySpan<float> filtersSpan = _melFilters.AsSpan();
             for (int m = 0; m < MelBins; m++)
             {
-                double acc = 0.0;
-                int row = m * 257;
-                for (int k = 0; k < 257; k++)
-                {
-                    double re = spec[k].Real, im = spec[k].Imaginary;
-                    double power = re * re + im * im;
-                    acc += (double)_melFilters[row + k] * power;
-                }
-                mel[f, m] = (float)Math.Log(acc + LogGuard);
+                ReadOnlySpan<float> filterRow = filtersSpan.Slice(m * 257, 257);
+                float acc = TensorPrimitives.Dot(filterRow, power);
+                mel[f, m] = MathF.Log(acc + LogGuard);
             }
         }
         return mel;

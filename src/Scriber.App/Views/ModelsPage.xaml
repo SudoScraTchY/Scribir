@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             x:Class="Scriber.App.Views.ModelsPage"
+             x:DataType="vm:ModelsViewModel"
+             Title="AI Models"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
+
+    <Grid RowDefinitions="Auto, *">
+        
+        <!-- Header & Filter Bar -->
+        <Border Grid.Row="0" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                Padding="16,12">
+            <VerticalStackLayout Spacing="10">
+                <Grid ColumnDefinitions="*, Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="On-Device AI Models" FontSize="20" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                        <Label Text="{Binding SummaryText}" FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="🔄 Refresh"
+                            Command="{Binding RefreshStatusCommand}"
+                            FontSize="12" Padding="12,4" HeightRequest="32" CornerRadius="6"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                </Grid>
+
+                <!-- Search Input -->
+                <SearchBar Text="{Binding SearchQuery}"
+                           Placeholder="Search models by name, language, or id..."
+                           HeightRequest="40" Margin="0,2,0,0" />
+
+                <!-- Filter Controls Grid -->
+                <Grid ColumnDefinitions="*, *, *" ColumnSpacing="8">
+                    <!-- Type Picker -->
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="Type" FontSize="11" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                        <Picker ItemsSource="{Binding TypeFilterOptions}"
+                                SelectedItem="{Binding SelectedTypeFilter}"
+                                FontSize="12" HeightRequest="36" />
+                    </VerticalStackLayout>
+
+                    <!-- Tier Picker -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="Device Tier" FontSize="11" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                        <Picker ItemsSource="{Binding TierFilterOptions}"
+                                SelectedItem="{Binding SelectedTierFilter}"
+                                FontSize="12" HeightRequest="36" />
+                    </VerticalStackLayout>
+
+                    <!-- Language Picker -->
+                    <VerticalStackLayout Grid.Column="2" Spacing="2">
+                        <Label Text="Language" FontSize="11" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                        <Picker ItemsSource="{Binding LanguageFilterOptions}"
+                                SelectedItem="{Binding SelectedLanguageFilter}"
+                                FontSize="12" HeightRequest="36" />
+                    </VerticalStackLayout>
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Model List & Offline Disclosure Banner -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="12" Padding="16" MaximumWidthRequest="760" HorizontalOptions="Center">
+
+                <!-- Offline & Direct Download Disclosure Banner (ADR-0009) -->
+                <Border StrokeThickness="1" Stroke="#3B82F6"
+                        BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E293B}"
+                        Padding="14">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="🛡️" FontSize="22" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="100% On-Device &amp; Offline Privacy" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#1E40AF, Dark=#93C5FD}" />
+                            <Label Text="Model files are downloaded directly from upstream open-weights repositories (Hugging Face / GitHub). No audio or user data is ever uploaded. Once downloaded, all speech transcription and biometric speaker identification run locally on your device."
+                                   FontSize="11" LineBreakMode="WordWrap"
+                                   TextColor="{AppThemeBinding Light=#1E3A8A, Dark=#BFDBFE}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Model Cards Collection -->
+                <CollectionView ItemsSource="{Binding FilteredModels}">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Spacing="8" Padding="20" HorizontalOptions="Center">
+                            <Label Text="No matching models found" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                            <Label Text="Try adjusting your search query or filter chips above." FontSize="12" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ModelItemViewModel">
+                            <Border StrokeThickness="1"
+                                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                                    Padding="16" Margin="0,6">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="10">
+
+                                    <!-- Top Row: Name + Badges -->
+                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                                            <Label Text="{Binding FormattedType}" FontSize="12" FontAttributes="Bold"
+                                                   TextColor="{StaticResource Primary}" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Tier & Status Badges -->
+                                        <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="6" VerticalOptions="Start">
+                                            <!-- Tier Badge -->
+                                            <Border StrokeThickness="0"
+                                                    BackgroundColor="{Binding TierBadgeColor, Converter={StaticResource ColorHexConverter}}"
+                                                    Padding="8,3">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="6" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding DeviceTier}" TextColor="White" FontSize="10" FontAttributes="Bold" />
+                                            </Border>
+
+                                            <!-- Status Badge -->
+                                            <Border StrokeThickness="0"
+                                                    BackgroundColor="{Binding StatusBadgeColor, Converter={StaticResource ColorHexConverter}}"
+                                                    Padding="8,3">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="6" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding StatusBadgeText}" TextColor="White" FontSize="10" FontAttributes="Bold" />
+                                            </Border>
+                                        </HorizontalStackLayout>
+                                    </Grid>
+
+                                    <!-- Description -->
+                                    <Label Text="{Binding Description}" FontSize="12" LineBreakMode="WordWrap"
+                                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+
+                                    <!-- Metadata Row -->
+                                    <Grid ColumnDefinitions="*, *, *" Margin="0,2">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="1">
+                                            <Label Text="Size" FontSize="10" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding FormattedSize}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                            <Label Text="Languages" FontSize="10" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding FormattedLanguages}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Column="2" Spacing="1">
+                                            <Label Text="License" FontSize="10" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding License}" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+
+                                    <!-- Error message display if any -->
+                                    <Label Text="{Binding ErrorMessage}" FontSize="11" TextColor="{StaticResource Danger}"
+                                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyConverter}}" />
+
+                                    <!-- Downloading Progress Section -->
+                                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsDownloading}">
+                                        <ProgressBar Progress="{Binding ProgressFraction}" ProgressColor="{StaticResource Primary}" HeightRequest="8" />
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <Label Grid.Column="0" Text="{Binding ProgressBytesText}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Grid.Column="1" Text="{Binding ProgressPercentText}" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                                        </Grid>
+                                    </VerticalStackLayout>
+
+                                    <!-- Actions Row -->
+                                    <Grid ColumnDefinitions="Auto, *, Auto" Margin="0,4,0,0">
+                                        <!-- Source Link Button -->
+                                        <Button Grid.Column="0" Text="🌐 Upstream Source"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ModelsViewModel}}, Path=OpenSourceUrlCommand}"
+                                                CommandParameter="{Binding .}"
+                                                FontSize="11" Padding="8,2" HeightRequest="30" CornerRadius="6"
+                                                BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
+
+                                        <!-- Download Button -->
+                                        <Button Grid.Column="2" Text="{Binding FormattedSize, StringFormat='Download ({0})'}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ModelsViewModel}}, Path=DownloadModelCommand}"
+                                                CommandParameter="{Binding .}"
+                                                IsVisible="{Binding CanDownload}"
+                                                FontSize="12" HeightRequest="34" Padding="14,4" CornerRadius="8"
+                                                BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" />
+
+                                        <!-- Delete Button -->
+                                        <Button Grid.Column="2" Text="Delete From Device"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ModelsViewModel}}, Path=DeleteModelCommand}"
+                                                CommandParameter="{Binding .}"
+                                                IsVisible="{Binding CanDelete}"
+                                                FontSize="12" HeightRequest="34" Padding="14,4" CornerRadius="8"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"
+                                                TextColor="{StaticResource Danger}" FontAttributes="Bold" />
+                                    </Grid>
+
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

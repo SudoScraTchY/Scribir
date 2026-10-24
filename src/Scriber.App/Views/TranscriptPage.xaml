@@ -6,38 +6,48 @@
              xmlns:providers="clr-namespace:Scriber.Providers;assembly=Scriber.Providers"
              x:Class="Scriber.App.Views.TranscriptPage"
              x:DataType="vm:TranscriptViewModel"
-             Title="{Binding Title}">
+             Title="{Binding Title}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
 
     <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
         
-        <!-- Top Toolbar -->
-        <Border Grid.Row="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
-            <Grid ColumnDefinitions="*, Auto">
-                <VerticalStackLayout Grid.Column="0" Spacing="2">
-                    <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" />
-                    <Label Text="{Binding DurationFormatted, StringFormat='Duration: {0}'}" FontSize="12" TextColor="#6B7280" />
+        <!-- Top Toolbar Header -->
+        <Border Grid.Row="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}" Padding="16,12">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,1" Radius="3" Opacity="0.06" />
+            </Border.Shadow>
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                    <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" LineBreakMode="TailTruncation" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                    <Label Text="{Binding DurationFormatted, StringFormat='Duration: {0}'}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                 </VerticalStackLayout>
-                <HorizontalStackLayout Grid.Column="1" Spacing="8">
-                    <Button Text="Summarize"
+                <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                    <Button Text="✨ Summarize"
                             Command="{Binding SummarizeCommand}"
                             IsEnabled="{Binding CanSummarize}"
-                            FontSize="13" Padding="12,6"
-                            BackgroundColor="#10B981" TextColor="White" />
-                    <Button Text="Export..." Command="{Binding ExportCommand}" FontSize="13" Padding="12,6" />
+                            FontSize="12" Padding="12,6" HeightRequest="36" CornerRadius="8"
+                            BackgroundColor="{StaticResource Success}" TextColor="White" FontAttributes="Bold" />
+                    <Button Text="Export..."
+                            Command="{Binding ExportCommand}"
+                            FontSize="12" Padding="12,6" HeightRequest="36" CornerRadius="8"
+                            BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" />
                 </HorizontalStackLayout>
             </Grid>
         </Border>
 
-        <!-- Speakers Legend -->
-        <Border Grid.Row="1" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}" Padding="16,8">
-            <HorizontalStackLayout Spacing="16">
-                <Label Text="Speakers:" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
+        <!-- Speakers Legend Strip -->
+        <Border Grid.Row="1" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                Padding="16,8">
+            <HorizontalStackLayout Spacing="12">
+                <Label Text="Speakers:" FontSize="13" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" VerticalOptions="Center" />
                 <CollectionView ItemsSource="{Binding Speakers}" ItemsLayout="HorizontalList">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="domain:Speaker">
-                            <Border StrokeThickness="0" BackgroundColor="{Binding ColorHex, Converter={StaticResource ColorHexConverter}}" Padding="8,4" Margin="4,0">
+                            <Border StrokeThickness="0" BackgroundColor="{Binding ColorHex, Converter={StaticResource ColorHexConverter}}" Padding="10,4" Margin="4,0">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="6" />
+                                    <RoundRectangle CornerRadius="8" />
                                 </Border.StrokeShape>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=RenameSpeakerCommand}" CommandParameter="{Binding .}" />
@@ -53,14 +63,14 @@
         <!-- Meeting Summary & Action Items Card (PH2-INT-003) -->
         <Border Grid.Row="2"
                 IsVisible="{Binding HasSummary}"
-                StrokeThickness="1" Stroke="{AppThemeBinding Light=#10B981, Dark=#059669}"
+                StrokeThickness="1" Stroke="{StaticResource Success}"
                 BackgroundColor="{AppThemeBinding Light=#ECFDF5, Dark=#064E3B}"
                 Margin="12,8" Padding="16">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="10" />
+                <RoundRectangle CornerRadius="12" />
             </Border.StrokeShape>
             <VerticalStackLayout Spacing="10">
-                <Label Text="AI Meeting Summary" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#065F46, Dark=#A7F3D0}" />
+                <Label Text="✨ AI Meeting Summary" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#065F46, Dark=#A7F3D0}" />
                 <Label Text="{Binding SummaryOverview}" FontSize="13" TextColor="{AppThemeBinding Light=#047857, Dark=#D1FAE5}" />
 
                 <Label Text="Action Items" FontSize="13" FontAttributes="Bold" Margin="0,4,0,0" TextColor="{AppThemeBinding Light=#065F46, Dark=#A7F3D0}" />
@@ -69,8 +79,8 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="providers:ActionItem">
                             <HorizontalStackLayout Spacing="6" Margin="0,2">
-                                <Label Text="•" FontSize="14" FontAttributes="Bold" TextColor="#10B981" />
-                                <Label Text="{Binding Assignee, StringFormat='[{0}] '}" FontAttributes="Bold" FontSize="12" TextColor="#047857" />
+                                <Label Text="✓" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Success}" />
+                                <Label Text="{Binding Assignee, StringFormat='[{0}] '}" FontAttributes="Bold" FontSize="12" TextColor="{AppThemeBinding Light=#047857, Dark=#6EE7B7}" />
                                 <Label Text="{Binding Description}" FontSize="12" TextColor="{AppThemeBinding Light=#065F46, Dark=#D1FAE5}" />
                             </HorizontalStackLayout>
                         </DataTemplate>
@@ -84,45 +94,88 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:SegmentItemViewModel">
                     <Border StrokeThickness="1"
-                            Stroke="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='#3B82F6'}"
-                            BackgroundColor="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='#EFF6FF'}"
-                            Margin="12,4" Padding="12">
+                            Stroke="{Binding IsPlaying, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#4F46E5:Transparent'}"
+                            BackgroundColor="{Binding IsPlaying, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#EEF2FF:Transparent'}"
+                            Margin="12,4" Padding="14">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="12" />
                         </Border.StrokeShape>
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=SeekToSegmentCommand}" CommandParameter="{Binding .}" />
                         </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="6">
+                        <VerticalStackLayout Spacing="8">
                             
                             <!-- Segment Header -->
                             <Grid ColumnDefinitions="Auto, *, Auto">
-                                <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="{Binding SpeakerColorHex, Converter={StaticResource ColorHexConverter}}" Padding="6,2">
+                                <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="{Binding SpeakerColorHex, Converter={StaticResource ColorHexConverter}}" Padding="8,3">
                                     <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="4" />
+                                        <RoundRectangle CornerRadius="6" />
                                     </Border.StrokeShape>
                                     <Label Text="{Binding SpeakerName}" TextColor="White" FontSize="11" FontAttributes="Bold" />
                                 </Border>
 
-                                <Label Grid.Column="1" Text="{Binding TimeString}" FontSize="12" TextColor="#6B7280" Margin="8,0,0,0" VerticalOptions="Center" />
-                                <Button Grid.Column="2" Text="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='Edit'}"
+                                <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center" Margin="10,0,0,0">
+                                    <Label Text="{Binding TimeString}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" VerticalOptions="Center" />
+                                    
+                                    <!-- Low Confidence Warning Badge (PH1-UI-007) -->
+                                    <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#78350F}"
+                                            Padding="6,2" IsVisible="{Binding HasLowConfidenceWords}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="4" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding ToggleEditCommand}" />
+                                        </Border.GestureRecognizers>
+                                        <Label Text="{Binding LowConfidenceBadgeText, StringFormat='⚠️ {0}'}"
+                                               FontSize="10" FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light=#B45309, Dark=#FDE68A}" />
+                                    </Border>
+                                </HorizontalStackLayout>
+
+                                <Button Grid.Column="2" Text="{Binding IsEditing, Converter={StaticResource EditSaveTextConverter}}"
                                         Command="{Binding ToggleEditCommand}"
-                                        FontSize="11" Padding="6,2" HeightRequest="28" BackgroundColor="Transparent" TextColor="#2563EB" />
+                                        FontSize="11" Padding="8,2" HeightRequest="28" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
                             </Grid>
 
-                            <!-- Read-only Text -->
-                            <Label Text="{Binding Text}" FontSize="14" LineBreakMode="WordWrap" TextColor="{AppThemeBinding Light=#1F2937, Dark=#F3F4F6}"
-                                   IsVisible="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}}" />
+                            <!-- Interactive Rich Word View with Confidence Highlighting (PH1-UI-007) -->
+                            <FlexLayout BindableLayout.ItemsSource="{Binding WordItems}"
+                                        Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                        IsVisible="{Binding ShowRichWordsView}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:WordItemViewModel">
+                                        <Border StrokeThickness="0"
+                                                BackgroundColor="{Binding IsLowConfidence, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#FEF3C7:Transparent'}"
+                                                Padding="3,1" Margin="1,2">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="4" />
+                                            </Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SegmentItemViewModel}}, Path=StartEditWordCommand}" CommandParameter="{Binding .}" />
+                                            </Border.GestureRecognizers>
+                                            <Label Text="{Binding Text}" FontSize="14"
+                                                   TextDecorations="{Binding TextDecoration}"
+                                                   TextColor="{Binding IsLowConfidence, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#B45309:#1F2937'}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+
+                            <!-- Standard Text Label for Segments without Low-Confidence Flagging -->
+                            <Label Text="{Binding Text}" FontSize="14" LineHeight="1.3" LineBreakMode="WordWrap"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray100}}"
+                                   IsVisible="{Binding ShowStandardTextView}" />
 
                             <!-- Edit Mode Input -->
-                            <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="6">
-                                <Editor Text="{Binding EditText}" AutoSize="TextChanges" FontSize="14" />
+                            <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="8">
+                                <Editor Text="{Binding EditText}" AutoSize="TextChanges" FontSize="14"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
                                 <HorizontalStackLayout Spacing="8" HorizontalOptions="End">
-                                    <Button Text="Cancel" Command="{Binding ToggleEditCommand}" FontSize="12" HeightRequest="32" BackgroundColor="#E5E7EB" TextColor="#374151" />
+                                    <Button Text="Cancel" Command="{Binding ToggleEditCommand}" FontSize="12" HeightRequest="32" CornerRadius="6" BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
                                     <Button Text="Save"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=SaveEditCommand}"
                                             CommandParameter="{Binding .}"
-                                            FontSize="12" HeightRequest="32" BackgroundColor="#2563EB" TextColor="White" />
+                                            FontSize="12" HeightRequest="32" CornerRadius="6" BackgroundColor="{StaticResource Primary}" TextColor="White" />
                                 </HorizontalStackLayout>
                             </VerticalStackLayout>
 
@@ -133,20 +186,28 @@
         </CollectionView>
 
         <!-- Playback Controller Bar -->
-        <Border Grid.Row="4" StrokeThickness="1" Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}" Padding="16,12">
-            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+        <Border Grid.Row="4" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                Padding="16,10">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="4" Opacity="0.05" />
+            </Border.Shadow>
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
                 
                 <!-- Play/Pause Button -->
-                <Button Grid.Column="0" Text="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}, ConverterParameter='Play'}"
+                <Button Grid.Column="0"
+                        Text="{Binding IsPlaying, Converter={StaticResource PlayPauseTextConverter}}"
                         Command="{Binding PlayPauseCommand}"
-                        FontAttributes="Bold" WidthRequest="70" HeightRequest="40" BackgroundColor="#2563EB" TextColor="White" />
+                        FontAttributes="Bold" WidthRequest="84" HeightRequest="40" CornerRadius="8"
+                        BackgroundColor="{StaticResource Primary}" TextColor="White" />
 
                 <!-- Scrubber Slider & Timestamps -->
                 <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                    <Slider Minimum="0.0" Maximum="1.0" Value="{Binding PlaybackProgress}" MinimumTrackColor="#2563EB" />
+                    <Slider Minimum="0.0" Maximum="1.0" Value="{Binding PlaybackProgress}" MinimumTrackColor="{StaticResource Primary}" ThumbColor="{StaticResource Primary}" />
                     <Grid ColumnDefinitions="*, *">
-                        <Label Grid.Column="0" Text="{Binding CurrentPositionText}" FontSize="11" TextColor="#6B7280" />
-                        <Label Grid.Column="1" Text="{Binding DurationText}" FontSize="11" TextColor="#6B7280" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="0" Text="{Binding CurrentPositionText}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Label Grid.Column="1" Text="{Binding DurationText}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalTextAlignment="End" />
                     </Grid>
                 </VerticalStackLayout>
 

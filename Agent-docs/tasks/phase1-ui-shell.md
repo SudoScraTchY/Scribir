@@ -178,7 +178,8 @@ required, not optional.
 
 ### PH1-UI-007 — Confidence-aware review styling
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-20
 **Depends On:** PH1-CORE-005 (confidence must exist in ASR output),
 PH1-UI-003
 **Related ADR(s):** None directly (see
@@ -204,6 +205,13 @@ is purely about surfacing, not auto-correcting.
 
 **Suggested Verification:** Manual test with a fixture transcript
 container a deliberate range of confidence values.
+
+**Completion note (2026-10-20):** Done. Created `WordItemViewModel` encapsulating word confidence,
+tooltip, and underline decoration. Updated `SegmentItemViewModel` with `WordItems`, `HasLowConfidenceWords`,
+`LowConfidenceBadgeText`, and `StartEditWordCommand`. Updated `TranscriptPage.xaml` with amber warning badge
+in segment header and rich interactive wrap layout for flagged segments, keeping fast single-label rendering
+for clean segments. Added user-adjustable threshold slider (50% to 95%, stored in MAUI `Preferences`) in
+`SettingsViewModel` and `SettingsPage.xaml`. Built and verified on Windows Desktop.
 
 ---
 

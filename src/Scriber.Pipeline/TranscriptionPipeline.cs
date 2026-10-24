@@ -1,7 +1,9 @@
 using Scriber.Core.Audio;
 using Scriber.Core.Domain;
+using Scriber.Core.Inference;
 using Scriber.Inference.Asr;
 using Scriber.Inference.Diarization;
+using Scriber.Inference.SpeakerId;
 using Scriber.Pipeline.Alignment;
 using Scriber.Pipeline.Import;
 using Scriber.Pipeline.Normalization;
@@ -11,7 +13,7 @@ namespace Scriber.Pipeline;
 
 /// <summary>
 /// Default orchestrator for the complete audio-to-transcript processing pipeline.
-/// Chains IAudioDecoder, IVad (optional), IDiarizer, IAsrBackend, ITranscriptAligner, and ITextNormalizer (optional).
+/// Chains IAudioDecoder, IVad (optional), IDiarizer, IAsrBackend, ITranscriptAligner, ITextNormalizer (optional), and voiceprint recognition (optional).
 /// </summary>
 public sealed class TranscriptionPipeline : ITranscriptionPipeline
 {
@@ -33,6 +35,9 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
     private readonly IAsrBackend _asr;
     private readonly ITranscriptAligner _aligner;
     private readonly ITextNormalizer? _normalizer;
+    private readonly ISpeakerEmbedder? _speakerEmbedder;
+    private readonly SpeakerMatcher? _speakerMatcher;
+    private readonly IReadOnlyList<Voiceprint>? _knownVoiceprints;
 
     public TranscriptionPipeline(
         IAudioDecoder decoder,
@@ -40,7 +45,10 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
         IAsrBackend asr,
         ITranscriptAligner? aligner = null,
         IVad? vad = null,
-        ITextNormalizer? normalizer = null)
+        ITextNormalizer? normalizer = null,
+        ISpeakerEmbedder? speakerEmbedder = null,
+        SpeakerMatcher? speakerMatcher = null,
+        IReadOnlyList<Voiceprint>? knownVoiceprints = null)
     {
         _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
         _diarizer = diarizer ?? throw new ArgumentNullException(nameof(diarizer));
@@ -48,6 +56,9 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
         _aligner = aligner ?? new TranscriptAligner();
         _vad = vad;
         _normalizer = normalizer;
+        _speakerEmbedder = speakerEmbedder;
+        _speakerMatcher = speakerMatcher;
+        _knownVoiceprints = knownVoiceprints;
     }
 
     public async Task<Transcript> ProcessAsync(
@@ -95,7 +106,19 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
         {
             ct.ThrowIfCancellationRequested();
             progress?.Report(new PipelineProgress(PipelineStage.VoiceActivityDetection, 0.15, "Performing Voice Activity Detection..."));
-            _ = _vad.DetectSpeech(audio, ct);
+            var speechRanges = _vad.DetectSpeech(audio, ct);
+            if (speechRanges.Count == 0)
+            {
+                progress?.Report(new PipelineProgress(PipelineStage.Completed, 1.0, "No speech detected in audio."));
+                return new Transcript(
+                    id: Guid.NewGuid(),
+                    title: !string.IsNullOrWhiteSpace(options.Title) ? options.Title : Path.GetFileNameWithoutExtension(sourcePath),
+                    createdAt: DateTimeOffset.UtcNow,
+                    languageCode: options.LanguageCode,
+                    speakers: [],
+                    segments: [],
+                    audio: new AudioReference(sourcePath, audio.Duration, audio.SampleRate));
+            }
         }
 
         // 3. Diarization Pass
@@ -122,8 +145,8 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
             alignedSegments = _normalizer.NormalizeSegments(alignedSegments, options.NormalizationOptions);
         }
 
-        // 7. Assemble Speakers and Transcript
-        var speakers = BuildSpeakers(alignedSegments, turns);
+        // 7. Assemble Speakers and Voiceprint Matching
+        var speakers = await BuildSpeakersAsync(alignedSegments, turns, audio, ct).ConfigureAwait(false);
 
         var title = !string.IsNullOrWhiteSpace(options.Title)
             ? options.Title
@@ -150,7 +173,11 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
         return transcript;
     }
 
-    private static IReadOnlyList<Speaker> BuildSpeakers(IReadOnlyList<Segment> segments, IReadOnlyList<SpeakerTurn> turns)
+    private async Task<IReadOnlyList<Speaker>> BuildSpeakersAsync(
+        IReadOnlyList<Segment> segments,
+        IReadOnlyList<SpeakerTurn> turns,
+        AudioBuffer audio,
+        CancellationToken ct)
     {
         // Collect all distinct speaker IDs preserving appearance order
         var orderedIds = new List<string>();
@@ -179,7 +206,53 @@ public sealed class TranscriptionPipeline : ITranscriptionPipeline
             string id = orderedIds[i];
             string displayName = FormatDisplayName(id, i);
             string color = DefaultColorPalette[i % DefaultColorPalette.Length];
-            speakers.Add(new Speaker(id, displayName, color));
+            Guid? matchedVoiceprintId = null;
+
+            // Research & implementation of voiceprint feature: Match diarized speaker turns against known voiceprints
+            if (_speakerEmbedder != null && _speakerMatcher != null && _knownVoiceprints != null && _knownVoiceprints.Count > 0)
+            {
+                try
+                {
+                    // Aggregate speech audio slices across turns for this speaker (up to 6s of audio for high-fidelity embedding)
+                    var speakerTurns = turns.Where(t => t.SpeakerId == id).OrderByDescending(t => t.End - t.Start).ToList();
+                    var collectedSamples = new List<float>();
+                    int maxSamplesToCollect = audio.SampleRate * 6; // up to 6s
+
+                    foreach (var turn in speakerTurns)
+                    {
+                        int startSample = Math.Clamp((int)(turn.Start.TotalSeconds * audio.SampleRate), 0, audio.Samples.Length - 1);
+                        int endSample = Math.Clamp((int)(turn.End.TotalSeconds * audio.SampleRate), startSample + 1, audio.Samples.Length);
+                        int turnLen = endSample - startSample;
+                        if (turnLen <= 0) continue;
+
+                        int take = Math.Min(turnLen, maxSamplesToCollect - collectedSamples.Count);
+                        var slice = new float[take];
+                        Array.Copy(audio.Samples, startSample, slice, 0, take);
+                        collectedSamples.AddRange(slice);
+
+                        if (collectedSamples.Count >= maxSamplesToCollect) break;
+                    }
+
+                    if (collectedSamples.Count >= 16000) // At least 1.0s of speech across turns
+                    {
+                        var sliceBuffer = new AudioBuffer(collectedSamples.ToArray(), audio.SampleRate, 1);
+                        float[] embedding = await _speakerEmbedder.ExtractEmbeddingAsync(sliceBuffer, ct).ConfigureAwait(false);
+                        var matchResult = _speakerMatcher.Match(id, embedding, _knownVoiceprints);
+
+                        if (matchResult.MeetsThreshold && matchResult.BestMatch != null)
+                        {
+                            displayName = matchResult.BestMatch.Voiceprint.DisplayName;
+                            matchedVoiceprintId = matchResult.BestMatch.Voiceprint.Id;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fall back to default generic speaker label if embedding fails
+                }
+            }
+
+            speakers.Add(new Speaker(id, displayName, color, matchedVoiceprintId));
         }
 
         return speakers;

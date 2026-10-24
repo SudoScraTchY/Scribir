@@ -31,7 +31,11 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
         }
         else
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromHours(2)
+            };
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Scribir/1.0");
             _ownsClient = true;
         }
     }
@@ -43,7 +47,11 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
         string modelDir = Path.Combine(_cacheDirectory, model.Id);
         if (!Directory.Exists(modelDir))
         {
-            return new ModelStatus(model.Id, ModelCacheState.NotDownloaded);
+            TrySeedFromRepoFallback(model, modelDir);
+            if (!Directory.Exists(modelDir))
+            {
+                return new ModelStatus(model.Id, ModelCacheState.NotDownloaded);
+            }
         }
 
         if (model.Files == null || model.Files.Count == 0)
@@ -56,12 +64,18 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
             string filePath = Path.Combine(modelDir, file.Filename);
             if (!File.Exists(filePath))
             {
-                return new ModelStatus(model.Id, ModelCacheState.NotDownloaded);
+                // Try to seed individual missing file
+                TrySeedIndividualFile(modelDir, file);
+                if (!File.Exists(filePath))
+                {
+                    return new ModelStatus(model.Id, ModelCacheState.NotDownloaded);
+                }
             }
 
             // Verify checksum
-            string computedHash = ComputeSha256(filePath);
-            if (!computedHash.Equals(file.Sha256, StringComparison.OrdinalIgnoreCase))
+            string computedHash = ComputeSha256(filePath).Trim();
+            string expectedHash = file.Sha256.Trim();
+            if (!computedHash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
             {
                 return new ModelStatus(
                     model.Id,
@@ -124,10 +138,27 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
             try
             {
                 // Check if existing file is already valid
-                if (File.Exists(targetPath) && ComputeSha256(targetPath).Equals(file.Sha256, StringComparison.OrdinalIgnoreCase))
+                if (File.Exists(targetPath) && ComputeSha256(targetPath).Trim().Equals(file.Sha256.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     totalDownloadedSoFar += new FileInfo(targetPath).Length;
                     continue;
+                }
+
+                // Check if available from local repo fallback
+                string? repoFallback = FindRepoFallbackFile(file.Filename);
+                if (!string.IsNullOrEmpty(repoFallback) && File.Exists(repoFallback))
+                {
+                    string fallbackSha = ComputeSha256(repoFallback).Trim();
+                    if (fallbackSha.Equals(file.Sha256.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(repoFallback, targetPath, overwrite: true);
+                        if (file.Filename == "nemotron3_stream_step.onnx")
+                        {
+                            CopyDiarizerPortAssets(modelDir);
+                        }
+                        totalDownloadedSoFar += new FileInfo(targetPath).Length;
+                        continue;
+                    }
                 }
 
                 // Download to temporary file
@@ -160,15 +191,16 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
                 }
 
                 // Verify SHA-256 Checksum
-                string actualSha = ComputeSha256(tempPath);
-                if (!actualSha.Equals(file.Sha256, StringComparison.OrdinalIgnoreCase))
+                string actualSha = ComputeSha256(tempPath).Trim().ToLowerInvariant();
+                string expectedSha = file.Sha256.Trim().ToLowerInvariant();
+                if (!string.Equals(actualSha, expectedSha, StringComparison.OrdinalIgnoreCase))
                 {
                     if (File.Exists(tempPath)) File.Delete(tempPath);
 
                     var failureStatus = new ModelStatus(
                         model.Id,
                         ModelCacheState.Failed,
-                        ErrorMessage: $"Checksum mismatch for '{file.Filename}'. Expected {file.Sha256}, got {actualSha}. Download rejected per ADR-0009.");
+                        ErrorMessage: $"Checksum mismatch for '{file.Filename}'. Expected {expectedSha}, got {actualSha}. Download rejected per ADR-0009.");
                     progress?.Report(failureStatus);
                     return failureStatus;
                 }
@@ -210,17 +242,149 @@ public sealed class LocalModelCacheManager : IModelCacheManager, IDisposable
         if (Directory.Exists(modelDir))
         {
             Directory.Delete(modelDir, recursive: true);
+            foreach (var key in HashCache.Keys.Where(k => k.Contains(model.Id)))
+            {
+                HashCache.TryRemove(key, out _);
+            }
             return true;
         }
 
         return false;
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (long Length, DateTime LastWriteTimeUtc, string Hash)> HashCache = new();
+
     private static string ComputeSha256(string filePath)
     {
+        var fi = new FileInfo(filePath);
+        if (!fi.Exists) return string.Empty;
+
+        if (HashCache.TryGetValue(filePath, out var cached) &&
+            cached.Length == fi.Length &&
+            cached.LastWriteTimeUtc == fi.LastWriteTimeUtc)
+        {
+            return cached.Hash;
+        }
+
         using var stream = File.OpenRead(filePath);
         var hash = SHA256.HashData(stream);
-        return Convert.ToHexStringLower(hash);
+        string result = Convert.ToHexStringLower(hash);
+
+        HashCache[filePath] = (fi.Length, fi.LastWriteTimeUtc, result);
+        return result;
+    }
+
+    private static string? FindRepoFallbackFile(string filename)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
+            dir = dir.Parent;
+
+        if (dir == null) return null;
+        string root = dir.FullName;
+
+        string[] candidatePaths =
+        [
+            Path.Combine(root, "spikes", "PH0-SPIKE-001", "artifacts", "onnx", filename),
+            Path.Combine(root, "spikes", "PH0-SPIKE-001", "artifacts", "sherpa-models", filename),
+            Path.Combine(root, "spikes", "PH0-SPIKE-001", "artifacts", filename),
+            Path.Combine(root, "spikes", "PH0-SPIKE-002", "artifacts", "whisper-export", filename),
+            Path.Combine(root, "spikes", "PH0-SPIKE-002", "artifacts", filename),
+            Path.Combine(root, "src", "Scriber.Pipeline.Tests", "fixtures", filename)
+        ];
+
+        return candidatePaths.FirstOrDefault(File.Exists);
+    }
+
+    private static void TrySeedFromRepoFallback(ModelManifestEntry model, string modelDir)
+    {
+        if (model.Files == null || model.Files.Count == 0) return;
+
+        bool allAvailable = true;
+        foreach (var file in model.Files)
+        {
+            string? fallback = FindRepoFallbackFile(file.Filename);
+            if (string.IsNullOrEmpty(fallback) || !File.Exists(fallback))
+            {
+                allAvailable = false;
+                break;
+            }
+
+            string sha = ComputeSha256(fallback).Trim();
+            if (!sha.Equals(file.Sha256.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                allAvailable = false;
+                break;
+            }
+        }
+
+        if (allAvailable)
+        {
+            if (!Directory.Exists(modelDir)) Directory.CreateDirectory(modelDir);
+            foreach (var file in model.Files)
+            {
+                string fallback = FindRepoFallbackFile(file.Filename)!;
+                string dest = Path.Combine(modelDir, file.Filename);
+                File.Copy(fallback, dest, overwrite: true);
+            }
+
+            if (model.Id == "nemotron3-diarizer-v3")
+            {
+                CopyDiarizerPortAssets(modelDir);
+            }
+        }
+    }
+
+    private static void TrySeedIndividualFile(string modelDir, ModelFileEntry file)
+    {
+        string? fallback = FindRepoFallbackFile(file.Filename);
+        if (!string.IsNullOrEmpty(fallback) && File.Exists(fallback))
+        {
+            string sha = ComputeSha256(fallback).Trim();
+            if (sha.Equals(file.Sha256.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Directory.Exists(modelDir)) Directory.CreateDirectory(modelDir);
+                string dest = Path.Combine(modelDir, file.Filename);
+                File.Copy(fallback, dest, overwrite: true);
+                if (file.Filename == "nemotron3_stream_step.onnx")
+                {
+                    CopyDiarizerPortAssets(modelDir);
+                }
+            }
+        }
+    }
+
+    private static void CopyDiarizerPortAssets(string modelDir)
+    {
+        try
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
+                dir = dir.Parent;
+
+            if (dir == null) return;
+            string portAssetsDir = Path.Combine(dir.FullName, "spikes", "PH0-SPIKE-001", "artifacts", "csharp-port-assets");
+            if (!Directory.Exists(portAssetsDir)) return;
+
+            string[] assets =
+            [
+                "embedder_projection_weight_512x1024.bin",
+                "mel_filters_128x257.bin",
+                "silence_embeds_512.bin",
+                "window_hann_400.bin"
+            ];
+
+            foreach (var asset in assets)
+            {
+                string src = Path.Combine(portAssetsDir, asset);
+                string dst = Path.Combine(modelDir, asset);
+                if (File.Exists(src) && !File.Exists(dst))
+                {
+                    File.Copy(src, dst, overwrite: true);
+                }
+            }
+        }
+        catch { }
     }
 
     public void Dispose()

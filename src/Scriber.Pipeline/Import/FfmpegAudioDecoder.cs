@@ -36,6 +36,24 @@ public sealed class FfmpegAudioDecoder : IAudioDecoder
             throw new FileNotFoundException($"Audio file not found: {filePath}", filePath);
         }
 
+        // Direct WAV decoding: if the file is a WAV format, decode directly in pure C# without shelling out to ffmpeg.
+        // Critical for mobile edge devices (Android) where ffmpeg CLI binaries are not natively installed.
+        if (filePath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var direct = await WavHelper.TryReadWavDirectAsync(filePath, ct).ConfigureAwait(false);
+                if (direct != null)
+                {
+                    return direct;
+                }
+            }
+            catch
+            {
+                // Fall back to ffmpeg if direct read encountered non-standard chunks
+            }
+        }
+
         var startInfo = new ProcessStartInfo
         {
             FileName = _ffmpegPath,

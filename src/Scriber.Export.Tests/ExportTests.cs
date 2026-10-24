@@ -255,4 +255,34 @@ public class ExportTests
         Assert.True(imported.Segments[0].Words.Count > 0);
         Assert.Equal("This", imported.Segments[0].Words[0].Text);
     }
+
+    [Fact]
+    public void HtmlExporter_ExportsValidHtmlWithSpeakersAndTimestamps()
+    {
+        var transcript = CreateFixtureTranscript();
+        var exporter = new HtmlExporter();
+
+        string html = exporter.Export(transcript);
+
+        Assert.Contains("<!DOCTYPE html>", html);
+        Assert.Contains("Podcasting Interview", html);
+        Assert.Contains("Alice", html);
+        Assert.Contains("Bob", html);
+        Assert.Contains("Hello world, welcome.", html);
+        Assert.Contains("Thank you Alice.", html);
+    }
+
+    [Fact]
+    public void CsvExporter_ExportsValidCsvHeaderAndRows()
+    {
+        var transcript = CreateFixtureTranscript();
+        var exporter = new CsvExporter();
+
+        string csv = exporter.Export(transcript);
+
+        Assert.Contains("Index,SpeakerId,SpeakerName,StartSeconds,EndSeconds,StartTime,EndTime,WordCount,AvgConfidence,Text", csv);
+        Assert.Contains("Alice", csv);
+        Assert.Contains("Bob", csv);
+        Assert.Contains("\"Hello world, welcome.\"", csv);
+    }
 }
