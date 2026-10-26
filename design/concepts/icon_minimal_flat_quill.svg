@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Solid High-Contrast Background -->
+  <rect width="512" height="512" rx="115" fill="#0B132B"/>
+
+  <!-- Minimalist Flat Ancient Persian Quill + Soundwave -->
+  <!-- Designed specifically for 48x48 legibility with thick, robust geometry -->
+  <g transform="translate(256, 256)">
+    
+    <!-- Bold Quill Nib Silhouette -->
+    <!-- Pointing down-right at 45 degrees, or straight down -->
+    <!-- Left Half of Nib -->
+    <path d="M-130,-120 C-130,-20 -70,60 -18,170 L-18,20 C-18,10 -25,-5 -25,-20 C-25,-35 -18,-50 -18,-120 Z" 
+          fill="#F5C542"/>
+    
+    <!-- Right Half of Nib (Slightly deeper tone for subtle depth) -->
+    <path d="M130,-120 C130,-20 70,60 18,170 L18,20 C18,10 25,-5 25,-20 C25,-35 18,-50 18,-120 Z" 
+          fill="#D9A326"/>
+
+    <!-- Negative Space Center Slit with Audio Waveform Notch -->
+    <!-- The slit between left and right is 36px wide -->
+    <!-- Inside the slit sits a bold, chunky soundwave bar in Gold and White -->
+    <!-- Top Breather Hole (Clean Circle) -->
+    <circle cx="0" cy="-60" r="28" fill="#0B132B"/>
+    <circle cx="0" cy="-60" r="14" fill="#F5C542"/>
+
+    <!-- Central Slit Waveform (Chunky geometric bars that stay crisp at 48x48) -->
+    <rect x="-18" y="-32" width="36" height="180" rx="18" fill="#0B132B"/>
+    
+    <!-- Pulse Bars crossing the slit -->
+    <rect x="-65" y="10" width="130" height="22" rx="11" fill="#FFFFFF"/>
+    <rect x="-85" y="55" width="170" height="26" rx="13" fill="#4EECD6"/>
+    <rect x="-45" y="105" width="90" height="20" rx="10" fill="#FFFFFF"/>
+
+    <!-- Contact Writing Point -->
+    <circle cx="0" cy="172" r="14" fill="#FFFFFF"/>
+
+    <!-- Acoustic Ripple Dots beneath Tip -->
+    <circle cx="-50" cy="210" r="10" fill="#F5C542"/>
+    <circle cx="0" cy="218" r="12" fill="#4EECD6"/>
+    <circle cx="50" cy="210" r="10" fill="#F5C542"/>
+  </g>
+</svg>

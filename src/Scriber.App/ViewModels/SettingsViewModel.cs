@@ -16,8 +16,14 @@ public sealed class SettingsViewModel : BaseViewModel
     private readonly IVoiceprintRepository _voiceprintRepo;
     private readonly IProviderSettingsStore _providerSettingsStore;
     private readonly ICompletionProvider _completionProvider;
+    private readonly Scriber.Pipeline.Benchmark.IDeviceBenchmarkService? _benchmarkService;
 
     private bool _isLoadingVoiceprints;
+    private bool _isBenchmarking;
+    private string _benchmarkStatus = string.Empty;
+    private string _detectedTier = string.Empty;
+    private string _benchmarkHardwareNotes = string.Empty;
+    private string _recommendedModelId = string.Empty;
     private string _baseUrl = string.Empty;
     private string _apiKey = string.Empty;
     private string _modelName = string.Empty;
@@ -251,6 +257,38 @@ public sealed class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _isLoadingVoiceprints, value);
     }
 
+    public bool IsBenchmarking
+    {
+        get => _isBenchmarking;
+        set => SetProperty(ref _isBenchmarking, value);
+    }
+
+    public string BenchmarkStatus
+    {
+        get => _benchmarkStatus;
+        set => SetProperty(ref _benchmarkStatus, value);
+    }
+
+    public string DetectedTier
+    {
+        get => _detectedTier;
+        set => SetProperty(ref _detectedTier, value);
+    }
+
+    public string BenchmarkHardwareNotes
+    {
+        get => _benchmarkHardwareNotes;
+        set => SetProperty(ref _benchmarkHardwareNotes, value);
+    }
+
+    public string RecommendedModelId
+    {
+        get => _recommendedModelId;
+        set => SetProperty(ref _recommendedModelId, value);
+    }
+
+    public ObservableCollection<Scriber.Pipeline.Benchmark.ModelBenchmarkScore> BenchmarkCandidateScores { get; } = [];
+
     public ICommand LoadVoiceprintsCommand { get; }
     public ICommand RenameVoiceprintCommand { get; }
     public ICommand DeleteVoiceprintCommand { get; }
@@ -258,6 +296,7 @@ public sealed class SettingsViewModel : BaseViewModel
     public ICommand SaveProviderSettingsCommand { get; }
     public ICommand TestConnectionCommand { get; }
     public ICommand OpenModelsCommand { get; }
+    public ICommand RunBenchmarkCommand { get; }
 
     public SettingsViewModel(
         IModelCacheManager cacheManager,
@@ -265,14 +304,33 @@ public sealed class SettingsViewModel : BaseViewModel
         IVoiceprintRepository voiceprintRepo,
         IProviderSettingsStore providerSettingsStore,
         ICompletionProvider completionProvider,
-        string databasePath)
+        string databasePath,
+        Scriber.Pipeline.Benchmark.IDeviceBenchmarkService? benchmarkService = null)
     {
         _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
         _voiceprintRepo = voiceprintRepo ?? throw new ArgumentNullException(nameof(voiceprintRepo));
         _providerSettingsStore = providerSettingsStore ?? throw new ArgumentNullException(nameof(providerSettingsStore));
         _completionProvider = completionProvider ?? throw new ArgumentNullException(nameof(completionProvider));
+        _benchmarkService = benchmarkService;
         DatabasePath = databasePath;
+
+        if (_benchmarkService != null)
+        {
+            try
+            {
+                var hw = _benchmarkService.DetectHardware();
+                _detectedTier = Preferences.Default.Get("DeviceTier", hw.DetectedTier.ToString());
+                _recommendedModelId = Preferences.Default.Get("RecommendedModelId", hw.DetectedTier switch
+                {
+                    Scriber.Pipeline.Benchmark.DeviceTier.Low => "sherpa-whisper-tiny-int8",
+                    Scriber.Pipeline.Benchmark.DeviceTier.Medium => "sherpa-whisper-base-int8",
+                    _ => "sherpa-whisper-small-int8"
+                });
+                _benchmarkHardwareNotes = $"{hw.Platform} • {hw.Architecture} ({hw.ProcessorCount} Cores, {hw.EstimatedMemoryBytes / (1024 * 1024):N0} MB RAM)";
+            }
+            catch { }
+        }
 
         // Initialize persistent engine preferences
         _confidenceThreshold = Preferences.Default.Get("ConfidenceThreshold", 0.80);
@@ -295,8 +353,49 @@ public sealed class SettingsViewModel : BaseViewModel
         SaveProviderSettingsCommand = new Command(async () => await SaveProviderSettingsAsync());
         TestConnectionCommand = new Command(async () => await TestConnectionAsync());
         OpenModelsCommand = new Command(async () => await Shell.Current.GoToAsync("//models"));
+        RunBenchmarkCommand = new Command(async () => await RunBenchmarkAsync());
 
         Task.Run(InitializeAsync);
+    }
+
+    public async Task RunBenchmarkAsync()
+    {
+        if (_benchmarkService == null || IsBenchmarking) return;
+
+        IsBenchmarking = true;
+        BenchmarkStatus = "Running 5s DSP benchmark & evaluating model candidates...";
+        try
+        {
+            var result = await _benchmarkService.RunBenchmarkAsync();
+            DetectedTier = result.Hardware.DetectedTier.ToString();
+            BenchmarkHardwareNotes = $"{result.Hardware.Platform} • {result.Hardware.Architecture} ({result.Hardware.ProcessorCount} Cores, {result.Hardware.EstimatedMemoryBytes / (1024 * 1024):N0} MB RAM)";
+            RecommendedModelId = result.RecommendedModelId;
+
+            BenchmarkCandidateScores.Clear();
+            foreach (var score in result.CandidateScores)
+            {
+                BenchmarkCandidateScores.Add(score);
+            }
+
+            BenchmarkStatus = result.Summary;
+
+            Preferences.Default.Set("RecommendedModelId", result.RecommendedModelId);
+            Preferences.Default.Set("DeviceTier", result.Hardware.DetectedTier.ToString());
+
+            var match = AvailableAsrModels.FirstOrDefault(m => m.Id == result.RecommendedModelId);
+            if (match != null)
+            {
+                SelectedAsrModel = match;
+            }
+        }
+        catch (Exception ex)
+        {
+            BenchmarkStatus = $"Benchmark failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBenchmarking = false;
+        }
     }
 
     private async Task InitializeAsync()

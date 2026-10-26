@@ -256,6 +256,145 @@
           "size_bytes": 190085487
         }
       ]
+    },
+    {
+      "id": "llama-cpp-whisper-tiny-gguf",
+      "name": "Whisper Tiny (Q5_1 GGUF) - llama.cpp / whisper.cpp",
+      "description": "Ultra-compact Q5_1 quantized Whisper Tiny model (~32 MB). Lowest memory footprint and fastest inference speed for edge devices.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "low",
+      "size_bytes": 32152673,
+      "quant_variant": "q5_1",
+      "license": "MIT",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp",
+      "measured_wer": null,
+      "benchmark_notes": "GGUF Q5_1 quantized Tiny model for whisper.cpp / llama.cpp high-efficiency inference.",
+      "date_added": "2026-10-27",
+      "files": [
+        {
+          "filename": "ggml-tiny-q5_1.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin",
+          "sha256": "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7",
+          "size_bytes": 32152673
+        }
+      ]
+    },
+    {
+      "id": "llama-cpp-whisper-medium-gguf",
+      "name": "Whisper Medium (Q5_0 GGUF) - llama.cpp / whisper.cpp",
+      "description": "High-accuracy multilingual Whisper Medium model (~539 MB). Ideal for multi-speaker meetings and nuanced domain vocabulary.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "high",
+      "size_bytes": 539212467,
+      "quant_variant": "q5_0",
+      "license": "MIT",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp",
+      "measured_wer": null,
+      "benchmark_notes": "GGUF Q5_0 quantized Medium model for whisper.cpp / llama.cpp high-efficiency inference.",
+      "date_added": "2026-10-27",
+      "files": [
+        {
+          "filename": "ggml-medium-q5_0.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q5_0.bin",
+          "sha256": "19fea4b380c3a618ec4723c3eef2eb785ffba0d0538cf43f8f235e7b3b34220f",
+          "size_bytes": 539212467
+        }
+      ]
+    },
+    {
+      "id": "llama-cpp-whisper-large-v3-turbo-gguf",
+      "name": "Whisper Large v3 Turbo (Q5_0 GGUF) - llama.cpp / whisper.cpp",
+      "description": "OpenAI's latest optimized Large-v3 Turbo model (~574 MB). Delivers near Large-v3 accuracy at 4x-6x faster decoding speed.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "high",
+      "size_bytes": 574041195,
+      "quant_variant": "q5_0",
+      "license": "MIT",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp",
+      "measured_wer": null,
+      "benchmark_notes": "GGUF Q5_0 quantized Large-v3 Turbo model for high-accuracy and high-throughput local inference.",
+      "date_added": "2026-10-27",
+      "files": [
+        {
+          "filename": "ggml-large-v3-turbo-q5_0.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin",
+          "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+          "size_bytes": 574041195
+        }
+      ]
+    },
+    {
+      "id": "sherpa-whisper-medium-int8",
+      "name": "Whisper Medium (INT8) Multilingual",
+      "description": "Sherpa-onnx Whisper Medium encoder/decoder quantized to INT8 with attention token timestamps for high-accuracy offline transcription.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "high",
+      "size_bytes": 946072270,
+      "quant_variant": "int8",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-medium",
+      "measured_wer": null,
+      "benchmark_notes": "Sherpa-onnx export of Whisper Medium with encoder/decoder INT8 quantization.",
+      "date_added": "2026-10-27",
+      "files": [
+        {
+          "filename": "medium-encoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-medium/resolve/main/medium-encoder.int8.onnx",
+          "sha256": "1c54582b4d829de0089f6cb63bbbdb3bf7555398bacaf855fbecf1a84dfd193e",
+          "size_bytes": 374196283
+        },
+        {
+          "filename": "medium-decoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-medium/resolve/main/medium-decoder.int8.onnx",
+          "sha256": "595d00a338a365a7bfa0ca7f296cabc639583bef770ab6130df90f49a6412747",
+          "size_bytes": 571059257
+        },
+        {
+          "filename": "medium-tokens.txt",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-medium/resolve/main/medium-tokens.txt",
+          "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+          "size_bytes": 816730
+        }
+      ]
+    },
+    {
+      "id": "sherpa-whisper-large-v3-int8",
+      "name": "Whisper Large v3 (INT8) Multilingual",
+      "description": "Maximum-accuracy multilingual Whisper Large-v3 model with INT8 quantization, supporting complex multilingual and Persian speech.",
+      "model_type": "asr",
+      "language_codes": ["multilingual", "en", "fa"],
+      "device_tier_recommendation": "high",
+      "size_bytes": 1775753918,
+      "quant_variant": "int8",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-large-v3",
+      "measured_wer": null,
+      "benchmark_notes": "Sherpa-onnx export of Whisper Large-v3 with INT8 quantization.",
+      "date_added": "2026-10-27",
+      "files": [
+        {
+          "filename": "large-v3-encoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-large-v3/resolve/main/large-v3-encoder.int8.onnx",
+          "sha256": "d531cf17248acc43e8c09b472a0877055e770877857a5332fc1304b36534ec85",
+          "size_bytes": 766671985
+        },
+        {
+          "filename": "large-v3-decoder.int8.onnx",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-large-v3/resolve/main/large-v3-decoder.int8.onnx",
+          "sha256": "ebc6bfd88e162a46cb3edee8a7e727e1dcbc65cabecb19e2573695e4d495e1af",
+          "size_bytes": 1008265203
+        },
+        {
+          "filename": "large-v3-tokens.txt",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-large-v3/resolve/main/large-v3-tokens.txt",
+          "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+          "size_bytes": 816730
+        }
+      ]
     }
   ]
 }

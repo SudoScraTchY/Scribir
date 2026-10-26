@@ -3,11 +3,59 @@ namespace Scriber.Mcp.Tests;
 using System.Text.Json.Nodes;
 using Scriber.Core.Domain;
 using Scriber.Mcp;
+using Scriber.Providers;
 using Scriber.Storage;
 using Xunit;
 
 public class McpServerTests
 {
+    private sealed class MockVoiceprintRepository : IVoiceprintRepository
+    {
+        private readonly List<Voiceprint> _voiceprints = new();
+
+        public MockVoiceprintRepository(params Voiceprint[] voiceprints)
+        {
+            _voiceprints.AddRange(voiceprints);
+        }
+
+        public Task<IReadOnlyList<Voiceprint>> GetAllAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Voiceprint>>(_voiceprints.ToList());
+        }
+
+        public Task<Voiceprint?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return Task.FromResult(_voiceprints.FirstOrDefault(v => v.Id == id));
+        }
+
+        public Task SaveAsync(Voiceprint voiceprint, CancellationToken ct = default)
+        {
+            _voiceprints.RemoveAll(v => v.Id == voiceprint.Id);
+            _voiceprints.Add(voiceprint);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            _voiceprints.RemoveAll(v => v.Id == id);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MockSummarizer : ISummarizer
+    {
+        private readonly TranscriptSummaryResult _result;
+
+        public MockSummarizer(TranscriptSummaryResult result)
+        {
+            _result = result;
+        }
+
+        public Task<TranscriptSummaryResult> SummarizeAsync(string transcriptText, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_result);
+        }
+    }
     private sealed class MockTranscriptRepository : ITranscriptRepository
     {
         private readonly List<Transcript> _transcripts = new();
@@ -263,5 +311,124 @@ public class McpServerTests
         var error = response!["error"] as JsonObject;
         Assert.NotNull(error);
         Assert.Equal(-32601, error!["code"]?.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task ToolsList_IncludesAllFiveTools()
+    {
+        var repo = new MockTranscriptRepository();
+        var server = new McpServer(repo);
+
+        string request = """{"jsonrpc":"2.0","id":100,"method":"tools/list"}""";
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var tools = response!["result"]?["tools"]?.AsArray();
+        Assert.NotNull(tools);
+        Assert.Equal(5, tools!.Count);
+        var toolNames = tools.Select(t => t?["name"]?.GetValue<string>()).ToList();
+        Assert.Contains("list_transcripts", toolNames);
+        Assert.Contains("search_transcripts", toolNames);
+        Assert.Contains("get_transcript", toolNames);
+        Assert.Contains("get_transcript_summary", toolNames);
+        Assert.Contains("search_by_voiceprint", toolNames);
+    }
+
+    [Fact]
+    public async Task ToolsCall_GetTranscriptSummary_WithSummarizer_ReturnsStructuredSummary()
+    {
+        var id = Guid.NewGuid();
+        var transcript = CreateFixtureTranscript(id, "Design Review", "We decided to implement local vector search first.");
+        var repo = new MockTranscriptRepository(transcript);
+        var expectedSummary = new TranscriptSummaryResult(
+            "Discussion on local search implementation.",
+            new[] { "Local search prioritized", "ADR-0008 frontmatter enforced" },
+            new[] { new ActionItem("Ship vector search", "Jane") }
+        );
+        var summarizer = new MockSummarizer(expectedSummary);
+        var server = new McpServer(repo, null, summarizer);
+
+        string request = $"{{\"jsonrpc\":\"2.0\",\"id\":101,\"method\":\"tools/call\",\"params\":{{\"name\":\"get_transcript_summary\",\"arguments\":{{\"id\":\"{id}\",\"focus\":\"decisions\"}}}}}}";
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var content = response!["result"]?["content"]?.AsArray();
+        Assert.NotNull(content);
+        string text = content![0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("Discussion on local search implementation.", text);
+        Assert.Contains("Local search prioritized", text);
+        Assert.Contains("Ship vector search", text);
+        Assert.Contains("Jane", text);
+    }
+
+    [Fact]
+    public async Task ToolsCall_GetTranscriptSummary_FallbackWithoutSummarizer_ReturnsExtractiveSummary()
+    {
+        var id = Guid.NewGuid();
+        var transcript = CreateFixtureTranscript(id, "Design Review", "This is a sufficiently long sentence that will be picked up as a key point in our fallback extractive summary.");
+        var repo = new MockTranscriptRepository(transcript);
+        var server = new McpServer(repo);
+
+        string request = $"{{\"jsonrpc\":\"2.0\",\"id\":102,\"method\":\"tools/call\",\"params\":{{\"name\":\"get_transcript_summary\",\"arguments\":{{\"id\":\"{id}\"}}}}}}";
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var content = response!["result"]?["content"]?.AsArray();
+        Assert.NotNull(content);
+        string text = content![0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("Design Review", text);
+        Assert.Contains("keyPoints", text);
+    }
+
+    [Fact]
+    public async Task ToolsCall_SearchByVoiceprint_MatchesTranscriptAndSimilarVoiceprints()
+    {
+        var vpId1 = Guid.NewGuid();
+        var vpId2 = Guid.NewGuid();
+        var vp1 = new Voiceprint(vpId1, "Alice", new float[] { 1f, 0f, 0f, 0f }, DateTimeOffset.UtcNow);
+        var vp2 = new Voiceprint(vpId2, "Alice (Duplicate)", new float[] { 0.99f, 0.05f, 0f, 0f }, DateTimeOffset.UtcNow);
+
+        var vpRepo = new MockVoiceprintRepository(vp1, vp2);
+
+        var audio = new AudioReference("meeting.wav", TimeSpan.FromMinutes(5), 16000);
+        var speakerAlice = new Speaker("spk_alice", "Alice Primary", "#10B981", voiceprintId: vpId1);
+        var seg = new Segment("spk_alice", TimeSpan.Zero, TimeSpan.FromSeconds(3), new[]
+        {
+            new Word("Hello", TimeSpan.Zero, TimeSpan.FromSeconds(1), 0.98f),
+            new Word("everyone", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), 0.97f)
+        });
+        var transcript = new Transcript(Guid.NewGuid(), "Morning Standup", DateTimeOffset.UtcNow, "en", new[] { speakerAlice }, new[] { seg }, audio);
+        var transcriptRepo = new MockTranscriptRepository(transcript);
+
+        var server = new McpServer(transcriptRepo, vpRepo);
+
+        string request = $"{{\"jsonrpc\":\"2.0\",\"id\":103,\"method\":\"tools/call\",\"params\":{{\"name\":\"search_by_voiceprint\",\"arguments\":{{\"voiceprintId\":\"{vpId1}\",\"minSimilarity\":0.70}}}}}}";
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var content = response!["result"]?["content"]?.AsArray();
+        Assert.NotNull(content);
+        string text = content![0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("Morning Standup", text);
+        Assert.Contains("spk_alice", text);
+        Assert.Contains("Alice (Duplicate)", text);
+    }
+
+    [Fact]
+    public async Task ToolsCall_SearchByVoiceprint_NotFound_ReturnsToolError()
+    {
+        var vpRepo = new MockVoiceprintRepository();
+        var transcriptRepo = new MockTranscriptRepository();
+        var server = new McpServer(transcriptRepo, vpRepo);
+
+        string missingId = Guid.NewGuid().ToString();
+        string request = $"{{\"jsonrpc\":\"2.0\",\"id\":104,\"method\":\"tools/call\",\"params\":{{\"name\":\"search_by_voiceprint\",\"arguments\":{{\"voiceprintId\":\"{missingId}\"}}}}}}";
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var isError = response!["result"]?["isError"]?.GetValue<bool>();
+        Assert.True(isError);
+        var text = response["result"]?["content"]?.AsArray()?[0]?["text"]?.GetValue<string>();
+        Assert.Contains("was not found", text);
     }
 }

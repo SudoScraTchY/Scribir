@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgLapis" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#1B3566"/>
+      <stop offset="50%" stop-color="#0F2042"/>
+      <stop offset="100%" stop-color="#070E1E"/>
+    </radialGradient>
+    
+    <!-- Imperial Gold Gradients -->
+    <linearGradient id="goldLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="25%" stop-color="#F3C644"/>
+      <stop offset="60%" stop-color="#D4AF37"/>
+      <stop offset="90%" stop-color="#9A7B1C"/>
+      <stop offset="100%" stop-color="#5E4609"/>
+    </linearGradient>
+
+    <linearGradient id="goldSheen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="50%" stop-color="#FFF8D6"/>
+      <stop offset="100%" stop-color="#AA841E"/>
+    </linearGradient>
+
+    <linearGradient id="turquoiseGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2EAE9B"/>
+      <stop offset="100%" stop-color="#0E8388"/>
+    </linearGradient>
+
+    <!-- Drop Shadows & Glows -->
+    <filter id="royalGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="cuneiformShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle / App Icon Canvas Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bgLapis)"/>
+
+  <!-- Subtle Concentric Soundwave Ripples (Pre-Islamic Stone Inscription Basin) -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#goldLinear)" stroke-width="1.5" stroke-opacity="0.15" stroke-dasharray="6 8"/>
+  <circle cx="256" cy="256" r="185" fill="none" stroke="url(#goldLinear)" stroke-width="1" stroke-opacity="0.25"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#2EAE9B" stroke-width="1" stroke-opacity="0.2"/>
+
+  <!-- Central Old Persian Cuneiform Waveform Composition (Abstract "S" & Audio Equalizer) -->
+  <g filter="url(#cuneiformShadow)">
+    
+    <!-- Top Curve of "S" formed by horizontal & angled cuneiform wedges -->
+    <!-- Wedge 1: Upper Right Entry Wedge -->
+    <polygon points="340,120 310,135 310,105" fill="url(#goldSheen)" filter="url(#royalGlow)"/>
+    <path d="M310,115 L240,115 L220,125 L310,125 Z" fill="url(#goldLinear)"/>
+
+    <!-- Wedge 2: Top Arch Horizontal Wedge -->
+    <polygon points="260,110 240,120 240,100" fill="url(#goldSheen)"/>
+    <rect x="180" y="116" width="60" height="8" rx="2" fill="url(#goldLinear)"/>
+
+    <!-- Wedge 3: Top Left Curve Wedge (Downward Angled) -->
+    <polygon points="175,130 190,145 160,145" fill="url(#goldSheen)"/>
+    <path d="M168,145 L158,210 L168,210 L182,145 Z" fill="url(#goldLinear)"/>
+
+    <!-- Central Diaphragm / Dynamic S-Cross Horizontal Bar (Audio Waveform Attack) -->
+    <!-- Large Horizontal Cuneiform Master Wedge -->
+    <polygon points="150,256 195,230 195,282" fill="url(#goldSheen)" filter="url(#royalGlow)"/>
+    <path d="M195,250 L340,250 L355,256 L340,262 L195,262 Z" fill="url(#goldLinear)"/>
+    
+    <!-- Audio Waveform Ticks within Center Bar (Equalizer Pulses carved as mini vertical wedges) -->
+    <polygon points="215,232 225,232 220,248" fill="#FFF8D6"/>
+    <polygon points="235,224 245,224 240,248" fill="#FFF8D6"/>
+    <polygon points="255,214 265,214 260,248" fill="url(#turquoiseGlow)"/>
+    <polygon points="275,220 285,220 280,248" fill="#FFF8D6"/>
+    <polygon points="295,228 305,228 300,248" fill="#FFF8D6"/>
+
+    <polygon points="215,280 225,280 220,264" fill="#FFF8D6"/>
+    <polygon points="235,288 245,288 240,264" fill="#FFF8D6"/>
+    <polygon points="255,298 265,298 260,264" fill="url(#turquoiseGlow)"/>
+    <polygon points="275,292 285,292 280,264" fill="#FFF8D6"/>
+    <polygon points="295,284 305,284 300,264" fill="#FFF8D6"/>
+
+    <!-- Bottom Right Curve of "S" (Downward Stem) -->
+    <polygon points="345,270 330,255 360,255" fill="url(#goldSheen)"/>
+    <path d="M338,270 L348,345 L338,345 L324,270 Z" fill="url(#goldLinear)"/>
+
+    <!-- Bottom Arch Horizontal Wedge (Lower Loop) -->
+    <polygon points="245,395 265,385 265,405" fill="url(#goldSheen)"/>
+    <rect x="265" y="388" width="65" height="8" rx="2" fill="url(#goldLinear)"/>
+
+    <!-- Bottom Left Terminal Wedge -->
+    <polygon points="170,392 200,377 200,407" fill="url(#goldSheen)" filter="url(#royalGlow)"/>
+    <path d="M200,387 L270,387 L290,377 L200,377 Z" fill="url(#goldLinear)"/>
+
+    <!-- Corner Wedges (Pre-Islamic Inscription Word Dividers: 𐏐 ) -->
+    <polygon points="135,170 148,155 148,185" fill="url(#goldSheen)" opacity="0.8"/>
+    <polygon points="377,342 364,327 364,357" fill="url(#goldSheen)" opacity="0.8"/>
+
+    <!-- Core Acoustic Spark (Golden Stylus Point at Center) -->
+    <circle cx="260" cy="256" r="6" fill="#FFFFFF" filter="url(#royalGlow)"/>
+    <circle cx="260" cy="256" r="14" fill="none" stroke="#F3C644" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- Outer Border Inset Frame (Persepolis Palace Stepped Trim) -->
+  <rect x="20" y="20" width="472" height="472" rx="98" fill="none" stroke="url(#goldLinear)" stroke-width="2" stroke-opacity="0.35"/>
+</svg>

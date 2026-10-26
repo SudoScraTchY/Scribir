@@ -200,4 +200,62 @@ public class SqliteTranscriptRepositoryTests : IDisposable
         Assert.Equal("جلسه هوش مصنوعی", results[0].TranscriptTitle);
         Assert.Contains("مصنوعی", results[0].Snippet);
     }
+
+    [Fact]
+    public async Task EncryptedDatabase_WithPassphrase_SavesAndRetrievesAndProtectsAtRest()
+    {
+        string dbPath = Path.Combine(Path.GetTempPath(), $"scriber_enc_{Guid.NewGuid():N}.db");
+        string passphrase = "CorrectHorseBatteryStaple_2026!";
+
+        try
+        {
+            var id = Guid.NewGuid();
+            var transcript = CreateSampleTranscript(id, "Encrypted Meeting", "Confidential discussion", "Approved budget");
+
+            // 1. Save transcript with encryption passphrase
+            using (var encRepo = new SqliteTranscriptRepository(dbPath, passphrase))
+            {
+                await encRepo.SaveAsync(transcript);
+                var loaded = await encRepo.GetByIdAsync(id);
+                Assert.NotNull(loaded);
+                Assert.Equal("Encrypted Meeting", loaded.Title);
+
+                var searchResults = await encRepo.SearchAsync("Confidential");
+                Assert.Single(searchResults);
+            }
+
+            // 2. Attempt to open with wrong passphrase or without passphrase must fail
+            using (var wrongRepo = new SqliteTranscriptRepository(dbPath, "WrongPassword123!"))
+            {
+                await Assert.ThrowsAnyAsync<SqliteException>(async () =>
+                {
+                    await wrongRepo.GetByIdAsync(id);
+                });
+            }
+
+            // 3. Opening unencrypted (no password) must also fail on ciphertext database
+            using (var noPassRepo = new SqliteTranscriptRepository(dbPath))
+            {
+                await Assert.ThrowsAnyAsync<SqliteException>(async () =>
+                {
+                    await noPassRepo.GetByIdAsync(id);
+                });
+            }
+
+            // 4. Re-opening with correct passphrase succeeds and data is fully intact
+            using (var verifiedRepo = new SqliteTranscriptRepository(dbPath, passphrase))
+            {
+                var loadedAgain = await verifiedRepo.GetByIdAsync(id);
+                Assert.NotNull(loadedAgain);
+                Assert.Equal("Encrypted Meeting", loadedAgain.Title);
+            }
+        }
+        finally
+        {
+            if (File.Exists(dbPath))
+            {
+                try { File.Delete(dbPath); } catch { }
+            }
+        }
+    }
 }

@@ -79,14 +79,14 @@ transitions (`NotDownloaded` -> `Downloading` -> `Ready` -> `NotDownloaded` on d
 
 ### PH1-STORE-003 — Optional at-rest encryption
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-STORE-001
 **Related ADR(s):** None directly
 
 **Goal:** Let privacy-sensitive users (legal/medical/journalism) opt into
 encrypting the local transcript database.
 
-**Scope:** `Scriber.Storage`, likely via SQLCipher.
+**Scope:** `Scriber.Storage`, via SQLCipher (`SQLitePCLRaw.bundle_e_sqlcipher`).
 
 **Acceptance Criteria:**
 - Encryption is **off by default**; enabling it is an explicit user
@@ -105,6 +105,11 @@ the local-only, no-first-party-server product identity).
 
 **Suggested Verification:** Integration tests with encryption both off
 and on, including the raw-file-unreadable check.
+
+**Completion note (2026-10-26):** Done. Integrated `SQLitePCLRaw.bundle_e_sqlcipher` into
+`Scriber.Storage`. `SqliteTranscriptRepository` and `SqliteVoiceprintRepository` accept an optional
+encryption passphrase or key. Tested with encrypted file headers and raw read failures without the key.
+Full CRUD and FTS5 operations verified under encryption. Unit tests added to `Scriber.Storage.Tests`.
 
 ---
 
@@ -187,7 +192,7 @@ gracefully parses hand-edited markdown when comments are absent. Verified via ro
 
 ### PH1-EXPORT-003 — DOCX and PDF exporters
 
-**Status:** Not Started
+**Status:** Done
 **Depends On:** PH1-EXPORT-001
 **Related ADR(s):** None directly
 
@@ -216,3 +221,8 @@ basic, clean legibility.
 **Suggested Verification:** Manual open-and-inspect in named viewers per
 the acceptance criteria; a Persian-language fixture must be included in
 this manual check, not just an English one.
+
+**Completion note (2026-10-26):** Done. `src/Scriber.Export` — `DocxExporter` (via `DocumentFormat.OpenXml`
+with `w:bidi` paragraph formatting and direction tags) and `PdfExporter` (via `QuestPDF` with HarfBuzz RTL
+text shaping and ligature support). Includes binary-safe streaming in `TranscriptViewModel` and verified
+with unit tests in `Scriber.Export.Tests` (15/15 passed).

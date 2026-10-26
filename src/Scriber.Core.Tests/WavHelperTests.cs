@@ -107,4 +107,84 @@ public class WavHelperTests
                 File.Delete(tempFile);
         }
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(31)]
+    [InlineData(32)]
+    [InlineData(257)]
+    [InlineData(1024)]
+    public void Pcm16ToFloat_VariousLengths_MatchesScalarExpectation(int sampleCount)
+    {
+        byte[] pcmBytes = new byte[sampleCount * 2];
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short value = (short)((i * 37) % 32767);
+            BitConverter.GetBytes(value).CopyTo(pcmBytes, i * 2);
+        }
+
+        // Test array overload
+        float[] floats = WavHelper.Pcm16ToFloat(pcmBytes);
+        Assert.Equal(sampleCount, floats.Length);
+
+        // Test span destination overload
+        float[] dest = new float[sampleCount];
+        WavHelper.Pcm16ToFloat(pcmBytes, dest);
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short expectedPcm = (short)((i * 37) % 32767);
+            float expectedFloat = expectedPcm / 32768.0f;
+            Assert.Equal(expectedFloat, floats[i], 0.0001f);
+            Assert.Equal(expectedFloat, dest[i], 0.0001f);
+        }
+    }
+
+    [Fact]
+    public void Pcm16ToFloat_DestinationTooSmall_ThrowsArgumentException()
+    {
+        byte[] pcmBytes = new byte[32]; // 16 samples
+        float[] dest = new float[15]; // too small
+        Assert.Throws<ArgumentException>(() => WavHelper.Pcm16ToFloat(pcmBytes, dest));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(64)]
+    [InlineData(1024)]
+    public void CalculateRmsLevel_Pcm16Simd_ComputesCorrectlyAcrossLengths(int sampleCount)
+    {
+        byte[] pcmBytes = new byte[sampleCount * 2];
+        long expectedSumSquares = 0;
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short value = (short)((i * 73) % 20000);
+            BitConverter.GetBytes(value).CopyTo(pcmBytes, i * 2);
+            expectedSumSquares += (long)value * value;
+        }
+
+        float rms = WavHelper.CalculateRmsLevel(pcmBytes);
+
+        if (sampleCount == 0)
+        {
+            Assert.Equal(0f, rms);
+        }
+        else
+        {
+            double meanSquare = (double)expectedSumSquares / sampleCount;
+            double expectedRms = Math.Sqrt(meanSquare) / 32768.0;
+            float expectedVisual = (float)Math.Clamp(expectedRms * 4.0, 0.0, 1.0);
+            Assert.Equal(expectedVisual, rms, 0.0005f);
+        }
+    }
 }

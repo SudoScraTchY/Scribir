@@ -166,6 +166,8 @@ public sealed class WindowsAudioRecorder : IAudioRecorder
             catch { }
             _mediaCapture.Dispose();
             _mediaCapture = null;
+            // Short grace period to let Windows filesystem release the WAV file handle
+            await Task.Delay(60);
         }
 
         _recordingFile = null;

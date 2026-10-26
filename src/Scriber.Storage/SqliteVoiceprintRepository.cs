@@ -17,13 +17,23 @@ public sealed class SqliteVoiceprintRepository : IVoiceprintRepository, IDisposa
     private bool _initialized;
     private bool _disposed;
 
-    public SqliteVoiceprintRepository(string databasePathOrConnectionString)
+    static SqliteVoiceprintRepository()
+    {
+        SQLitePCL.Batteries_V2.Init();
+    }
+
+    public SqliteVoiceprintRepository(string databasePathOrConnectionString, string? password = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(databasePathOrConnectionString);
 
         if (databasePathOrConnectionString.Contains('='))
         {
-            _connectionString = databasePathOrConnectionString;
+            var builder = new SqliteConnectionStringBuilder(databasePathOrConnectionString);
+            if (!string.IsNullOrEmpty(password))
+            {
+                builder.Password = password;
+            }
+            _connectionString = builder.ConnectionString;
         }
         else
         {
@@ -33,11 +43,16 @@ public sealed class SqliteVoiceprintRepository : IVoiceprintRepository, IDisposa
                 Directory.CreateDirectory(dir);
             }
 
-            _connectionString = new SqliteConnectionStringBuilder
+            var builder = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePathOrConnectionString,
                 Mode = SqliteOpenMode.ReadWriteCreate
-            }.ConnectionString;
+            };
+            if (!string.IsNullOrEmpty(password))
+            {
+                builder.Password = password;
+            }
+            _connectionString = builder.ConnectionString;
         }
 
         if (_connectionString.Contains(":memory:", StringComparison.OrdinalIgnoreCase))

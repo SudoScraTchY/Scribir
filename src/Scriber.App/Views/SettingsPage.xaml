@@ -14,6 +14,61 @@
             <Label Text="Settings &amp; Diagnostics" FontSize="26" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
 
             <!-- ========================================================================= -->
+            <!-- ⚡ HARDWARE BENCHMARK & DEVICE TIER ONBOARDING (PH1-MODEL-003, ADR-0006)  -->
+            <!-- ========================================================================= -->
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                        <Label Grid.Column="0" Text="⚡ Hardware Benchmark &amp; Tier Calibration" FontSize="16" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" VerticalOptions="Center" />
+                        <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="{StaticResource Success}" Padding="8,4">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Label Text="{Binding DetectedTier, StringFormat='Tier: {0}'}" FontSize="10" FontAttributes="Bold" TextColor="White" />
+                        </Border>
+                    </Grid>
+
+                    <Label Text="Measure local DSP throughput and benchmark Whisper model candidates on your actual CPU/NPU hardware to calibrate optimal default models without guesswork (ADR-0006)."
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+
+                    <Border StrokeThickness="1"
+                            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}"
+                            Padding="12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Detected Hardware Profile:" FontSize="11" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Text="{Binding BenchmarkHardwareNotes}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}" />
+                            <Label Text="{Binding RecommendedModelId, StringFormat='Recommended Default: {0}'}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Primary}" Margin="0,4,0,0" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <Button Text="⚡ Run Hardware Benchmark"
+                                Command="{Binding RunBenchmarkCommand}"
+                                IsEnabled="{Binding IsBenchmarking, Converter={StaticResource InvertedBoolConverter}}"
+                                FontSize="13" Padding="16,8" CornerRadius="8"
+                                BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" />
+                        <ActivityIndicator IsRunning="{Binding IsBenchmarking}" IsVisible="{Binding IsBenchmarking}"
+                                           Color="{StaticResource Primary}" WidthRequest="24" HeightRequest="24" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="{Binding BenchmarkStatus}"
+                           IsVisible="{Binding BenchmarkStatus, Converter={StaticResource StringNotEmptyConverter}}"
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ========================================================================= -->
             <!-- AI TRANSCRIPTION & AUDIO PIPELINE ENGINES (PHASE 2 ENGINE CONFIGURATION)  -->
             <!-- ========================================================================= -->
             <Border StrokeThickness="1"

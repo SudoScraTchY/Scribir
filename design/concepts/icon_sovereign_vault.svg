@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgVault" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#161F30"/>
+      <stop offset="55%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+
+    <!-- Titanium Shield Gradient -->
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94A3B8"/>
+      <stop offset="40%" stop-color="#475569"/>
+      <stop offset="80%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- Emerald Sovereign Security Glow -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <filter id="emeraldGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Canvas -->
+  <rect width="512" height="512" rx="115" fill="url(#bgVault)"/>
+
+  <!-- Sovereign Security Shield Contour -->
+  <path d="M256,70 C340,70 395,95 405,175 C405,290 330,380 256,430 C182,380 107,290 107,175 C117,95 172,70 256,70 Z" 
+        fill="url(#shieldGrad)" stroke="#334155" stroke-width="4"/>
+
+  <!-- Inner Recessed Vault Chamber -->
+  <path d="M256,88 C325,88 375,110 385,178 C385,275 320,355 256,400 C192,355 127,275 127,178 C137,110 187,88 256,88 Z" 
+        fill="#070A10"/>
+
+  <!-- Concentric Audio Waveform Tumbler Rings (The Air-Gap Mechanism) -->
+  <circle cx="256" cy="235" r="115" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"/>
+  <circle cx="256" cy="235" r="90" fill="none" stroke="url(#emeraldGrad)" stroke-width="2.5" stroke-opacity="0.6" stroke-dasharray="14 10"/>
+  <circle cx="256" cy="235" r="68" fill="none" stroke="#64748B" stroke-width="1.5"/>
+
+  <!-- Vault Waveform Equalizer Teeth (Acoustic Combination Lock) -->
+  <g stroke="url(#emeraldGrad)" stroke-width="4" stroke-linecap="round" filter="url(#emeraldGlow)">
+    <!-- 8 Waveform Dial Teeth -->
+    <line x1="256" y1="125" x2="256" y2="145"/>
+    <line x1="256" y1="325" x2="256" y2="345"/>
+    <line x1="146" y1="235" x2="166" y2="235"/>
+    <line x1="346" y1="235" x2="366" y2="235"/>
+    
+    <line x1="178" y1="157" x2="192" y2="171"/>
+    <line x1="320" y1="299" x2="334" y2="313"/>
+    <line x1="178" y1="313" x2="192" y2="299"/>
+    <line x1="320" y1="171" x2="334" y2="157"/>
+  </g>
+
+  <!-- Central Air-Gapped Core (Stylized Keyhole / Diaphragm Core) -->
+  <g filter="url(#emeraldGlow)">
+    <circle cx="256" cy="235" r="42" fill="#0B0F19" stroke="url(#emeraldGrad)" stroke-width="3"/>
+    <!-- Stylus / Core Privacy Pivot -->
+    <polygon points="256,210 268,245 244,245" fill="url(#emeraldGrad)"/>
+    <circle cx="256" cy="255" r="7" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Air-Gap Status Indicator Node -->
+  <g transform="translate(256, 365)">
+    <circle cx="0" cy="0" r="5" fill="#10B981" filter="url(#emeraldGlow)"/>
+    <circle cx="0" cy="0" r="10" fill="none" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- Precision Rim -->
+  <rect x="22" y="22" width="468" height="468" rx="95" fill="none" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.3"/>
+</svg>

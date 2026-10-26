@@ -4,11 +4,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Scriber.Core.Domain;
 using Scriber.Export;
+using Scriber.Providers;
 using Scriber.Storage;
 
 public sealed class McpServer
 {
     private readonly ITranscriptRepository _repository;
+    private readonly IVoiceprintRepository? _voiceprintRepository;
+    private readonly ISummarizer? _summarizer;
     private readonly MarkdownExporter _exporter = new();
     private readonly TextReader _input;
     private readonly TextWriter _output;
@@ -21,8 +24,21 @@ public sealed class McpServer
     };
 
     public McpServer(ITranscriptRepository repository, TextReader? input = null, TextWriter? output = null, TextWriter? error = null)
+        : this(repository, null, null, input, output, error)
+    {
+    }
+
+    public McpServer(
+        ITranscriptRepository repository,
+        IVoiceprintRepository? voiceprintRepository,
+        ISummarizer? summarizer = null,
+        TextReader? input = null,
+        TextWriter? output = null,
+        TextWriter? error = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _voiceprintRepository = voiceprintRepository;
+        _summarizer = summarizer;
         _input = input ?? Console.In;
         _output = output ?? Console.Out;
         _error = error ?? Console.Error;
@@ -230,6 +246,52 @@ public sealed class McpServer
                     },
                     ["required"] = new JsonArray { "id" }
                 }
+            },
+            new JsonObject
+            {
+                ["name"] = "get_transcript_summary",
+                ["description"] = "Generate or retrieve an AI/heuristic summary of a transcript by ID, including key points and action items.",
+                ["inputSchema"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["id"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Transcript GUID identifier"
+                        },
+                        ["focus"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Optional summary focus (e.g. action items, decisions, technical discussion)"
+                        }
+                    },
+                    ["required"] = new JsonArray { "id" }
+                }
+            },
+            new JsonObject
+            {
+                ["name"] = "search_by_voiceprint",
+                ["description"] = "Search across transcripts and enrolled voiceprints using an enrolled voiceprint ID and optional cosine similarity threshold.",
+                ["inputSchema"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["voiceprintId"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Enrolled Voiceprint GUID identifier"
+                        },
+                        ["minSimilarity"] = new JsonObject
+                        {
+                            ["type"] = "number",
+                            ["description"] = "Minimum cosine similarity threshold (0.0 to 1.0, default 0.60)"
+                        }
+                    },
+                    ["required"] = new JsonArray { "voiceprintId" }
+                }
             }
         };
 
@@ -253,6 +315,8 @@ public sealed class McpServer
             "list_transcripts" => await ExecuteListTranscriptsAsync(arguments, cancellationToken),
             "search_transcripts" => await ExecuteSearchTranscriptsAsync(arguments, cancellationToken),
             "get_transcript" => await ExecuteGetTranscriptAsync(arguments, cancellationToken),
+            "get_transcript_summary" => await ExecuteGetTranscriptSummaryAsync(arguments, cancellationToken),
+            "search_by_voiceprint" => await ExecuteSearchByVoiceprintAsync(arguments, cancellationToken),
             _ => throw new McpRpcException(-32601, $"Unknown tool: '{toolName}'")
         };
     }
@@ -358,6 +422,196 @@ public sealed class McpServer
                 {
                     ["type"] = "text",
                     ["text"] = markdown
+                }
+            },
+            ["isError"] = false
+        };
+    }
+
+    private async Task<JsonObject> ExecuteGetTranscriptSummaryAsync(JsonObject args, CancellationToken cancellationToken)
+    {
+        string? idStr = args["id"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(idStr) || !Guid.TryParse(idStr, out var id))
+        {
+            return CreateToolErrorResult("Invalid or missing 'id' parameter (must be a valid GUID).");
+        }
+
+        string? focus = args["focus"]?.GetValue<string>();
+
+        var transcript = await _repository.GetByIdAsync(id, cancellationToken);
+        if (transcript == null)
+        {
+            return CreateToolErrorResult($"Transcript with ID '{id}' was not found.");
+        }
+
+        string fullText = string.Join("\n", transcript.Segments.Select(s =>
+        {
+            var spk = transcript.Speakers.FirstOrDefault(sp => sp.Id == s.SpeakerId);
+            string name = spk?.DisplayName ?? s.SpeakerId;
+            return $"{name}: {s.Text}";
+        }));
+
+        if (_summarizer != null)
+        {
+            try
+            {
+                string prompt = string.IsNullOrWhiteSpace(focus)
+                    ? fullText
+                    : $"Focus: {focus}\n\nTranscript:\n{fullText}";
+
+                var summaryResult = await _summarizer.SummarizeAsync(prompt, cancellationToken);
+                var summaryJson = JsonSerializer.Serialize(new
+                {
+                    transcriptId = transcript.Id.ToString(),
+                    title = transcript.Title,
+                    focus,
+                    summary = summaryResult.Summary,
+                    keyPoints = summaryResult.KeyPoints,
+                    actionItems = summaryResult.ActionItems.Select(a => new { description = a.Description, assignee = a.Assignee })
+                }, new JsonSerializerOptions { WriteIndented = true });
+
+                return new JsonObject
+                {
+                    ["content"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["type"] = "text",
+                            ["text"] = summaryJson
+                        }
+                    },
+                    ["isError"] = false
+                };
+            }
+            catch (Exception ex)
+            {
+                _error.WriteLine($"[Scriber.Mcp] Summarizer failed, falling back to extractive summary: {ex.Message}");
+            }
+        }
+
+        // Extractive fallback summary
+        var keyPoints = transcript.Segments
+            .Where(s => s.Text.Length > 20)
+            .Take(5)
+            .Select(s => s.Text.Trim())
+            .ToList();
+
+        var fallbackJson = JsonSerializer.Serialize(new
+        {
+            transcriptId = transcript.Id.ToString(),
+            title = transcript.Title,
+            focus,
+            summary = $"Transcript '{transcript.Title}' ({transcript.CreatedAt:yyyy-MM-dd}) with {transcript.Speakers.Count} speakers and {transcript.Segments.Count} segments.",
+            keyPoints = keyPoints.Count > 0 ? keyPoints : new List<string> { "No significant segments found." },
+            actionItems = Array.Empty<object>()
+        }, new JsonSerializerOptions { WriteIndented = true });
+
+        return new JsonObject
+        {
+            ["content"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = fallbackJson
+                }
+            },
+            ["isError"] = false
+        };
+    }
+
+    private async Task<JsonObject> ExecuteSearchByVoiceprintAsync(JsonObject args, CancellationToken cancellationToken)
+    {
+        if (_voiceprintRepository == null)
+        {
+            return CreateToolErrorResult("Voiceprint repository is not configured on this server.");
+        }
+
+        string? vpIdStr = args["voiceprintId"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(vpIdStr) || !Guid.TryParse(vpIdStr, out var vpId))
+        {
+            return CreateToolErrorResult("Invalid or missing 'voiceprintId' parameter (must be a valid GUID).");
+        }
+
+        float minSimilarity = args["minSimilarity"]?.GetValue<float?>() ?? 0.60f;
+
+        var targetVoiceprint = await _voiceprintRepository.GetByIdAsync(vpId, cancellationToken);
+        if (targetVoiceprint == null)
+        {
+            return CreateToolErrorResult($"Voiceprint with ID '{vpId}' was not found.");
+        }
+
+        // 1. Search transcripts matching this voiceprint
+        var allSummaries = await _repository.ListAsync(cancellationToken);
+        var matchingTranscripts = new List<object>();
+
+        foreach (var s in allSummaries)
+        {
+            var t = await _repository.GetByIdAsync(s.Id, cancellationToken);
+            if (t == null) continue;
+
+            var matchingSpeakers = t.Speakers.Where(sp => sp.VoiceprintId == vpId).ToList();
+            if (matchingSpeakers.Count > 0)
+            {
+                foreach (var sp in matchingSpeakers)
+                {
+                    int segCount = t.Segments.Count(seg => seg.SpeakerId == sp.Id);
+                    matchingTranscripts.Add(new
+                    {
+                        transcriptId = t.Id.ToString(),
+                        transcriptTitle = t.Title,
+                        speakerId = sp.Id,
+                        speakerDisplayName = sp.DisplayName,
+                        segmentCount = segCount
+                    });
+                }
+            }
+        }
+
+        // 2. Search other enrolled voiceprints by cosine similarity
+        var allVoiceprints = await _voiceprintRepository.GetAllAsync(cancellationToken);
+        var similarVoiceprints = new List<object>();
+
+        foreach (var vp in allVoiceprints)
+        {
+            if (vp.Id == vpId) continue;
+
+            float sim = Scriber.Core.Inference.SpeakerEmbeddingMath.CosineSimilarity(
+                targetVoiceprint.Embedding.Span,
+                vp.Embedding.Span);
+
+            if (sim >= minSimilarity)
+            {
+                similarVoiceprints.Add(new
+                {
+                    voiceprintId = vp.Id.ToString(),
+                    displayName = vp.DisplayName,
+                    similarity = Math.Round(sim, 4)
+                });
+            }
+        }
+
+        var resultJson = JsonSerializer.Serialize(new
+        {
+            voiceprint = new
+            {
+                id = targetVoiceprint.Id.ToString(),
+                displayName = targetVoiceprint.DisplayName,
+                createdAt = targetVoiceprint.CreatedAt.ToString("o")
+            },
+            minSimilarity,
+            matchingTranscripts,
+            similarVoiceprints
+        }, new JsonSerializerOptions { WriteIndented = true });
+
+        return new JsonObject
+        {
+            ["content"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = resultJson
                 }
             },
             ["isError"] = false

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Solid clean background -->
+    <rect id="bg" width="512" height="512" rx="115" fill="#0D1B36"/>
+  </defs>
+
+  <!-- Background Squircle -->
+  <use href="#bg"/>
+
+  <!-- Isometric Minimalist Ancient Persian Quill -->
+  <!-- Center is around (256, 256), rotated at 30° isometric axes -->
+  <g transform="translate(256, 250)">
+    
+    <!-- Isometric Audio Waveform Base (3 Bold Isometric Equalizer Columns) -->
+    <!-- Bar 1 (Left): x = -130 -->
+    <g transform="translate(-110, 80)">
+      <!-- Top Face -->
+      <polygon points="0,-25 35,-45 70,-25 35,-5" fill="#4EECD6"/>
+      <!-- Left Face -->
+      <polygon points="0,-25 35,-5 35,45 0,25" fill="#0E8388"/>
+      <!-- Right Face -->
+      <polygon points="35,-5 70,-25 70,25 35,45" fill="#095B5F"/>
+    </g>
+
+    <!-- Bar 2 (Center - Point of Quill Contact): x = 0 -->
+    <g transform="translate(-35, 110)">
+      <!-- Top Face -->
+      <polygon points="0,-40 35,-60 70,-40 35,-20" fill="#FFF2B2"/>
+      <!-- Left Face -->
+      <polygon points="0,-40 35,-20 35,60 0,40" fill="#D4AF37"/>
+      <!-- Right Face -->
+      <polygon points="35,-20 70,-40 70,40 35,60" fill="#9A7B1C"/>
+    </g>
+
+    <!-- Bar 3 (Right): x = 75 -->
+    <g transform="translate(40, 60)">
+      <!-- Top Face -->
+      <polygon points="0,-20 35,-40 70,-20 35,0" fill="#4EECD6"/>
+      <!-- Left Face -->
+      <polygon points="0,-20 35,0 35,40 0,20" fill="#0E8388"/>
+      <!-- Right Face -->
+      <polygon points="35,0 70,-20 70,20 35,40" fill="#095B5F"/>
+    </g>
+
+    <!-- Isometric Ancient Persian Stylus / Quill -->
+    <!-- The Quill descends from upper-left at isometric 30° angle toward (0, 70) -->
+    <g transform="translate(0, -60)">
+      <!-- Quill Upper Shaft (Facet 1: Top Light) -->
+      <polygon points="0,-130 50,-160 85,-100 35,-70" fill="#FFF6D1"/>
+      
+      <!-- Quill Upper Shaft (Facet 2: Front/Left Main) -->
+      <polygon points="0,-130 35,-70 -35,-30 -70,-90" fill="#F3C644"/>
+
+      <!-- Beveled Chisel Nib (The Scribe Point) -->
+      <!-- Left Nib Blade (Gold Midtone) -->
+      <polygon points="-35,-30 35,-70 0,70" fill="#D4AF37"/>
+
+      <!-- Right Nib Blade (Gold Dark Tone / Shadow) -->
+      <polygon points="35,-70 85,-100 0,70" fill="#9A7B1C"/>
+
+      <!-- Isometric Slit / Audio Channel (Bold Negative Space Cutout) -->
+      <polygon points="0,-20 12,-35 0,65 -12,35" fill="#0D1B36"/>
+
+      <!-- Nib Tip Spark / Pulse -->
+      <polygon points="0,55 14,47 0,75 -14,65" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>

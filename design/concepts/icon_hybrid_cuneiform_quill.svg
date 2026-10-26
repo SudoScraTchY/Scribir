@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background: Deep Lapis Lazuli fading into Obsidian Void -->
+    <radialGradient id="bgHybrid" cx="50%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#14264A"/>
+      <stop offset="50%" stop-color="#0B1324"/>
+      <stop offset="100%" stop-color="#03060C"/>
+    </radialGradient>
+
+    <!-- Imperial Gold Gradient -->
+    <linearGradient id="goldChisel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="35%" stop-color="#F3C644"/>
+      <stop offset="70%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8C6F1A"/>
+    </linearGradient>
+
+    <!-- Cyber Titanium / Obsidian Body -->
+    <linearGradient id="cyberObsidian" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="40%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- Turquoise Acoustic Energy Beam -->
+    <linearGradient id="turqPulse" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="30%" stop-color="#4EECD6"/>
+      <stop offset="100%" stop-color="#0E8388"/>
+    </linearGradient>
+
+    <filter id="hybridGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Canvas -->
+  <rect width="512" height="512" rx="115" fill="url(#bgHybrid)"/>
+
+  <!-- Radial Acoustic Sound Rings (The Ancient Clay Basin) -->
+  <circle cx="256" cy="380" r="180" fill="none" stroke="url(#goldChisel)" stroke-width="1.2" stroke-opacity="0.15" stroke-dasharray="6 8"/>
+  <circle cx="256" cy="380" r="130" fill="none" stroke="#4EECD6" stroke-width="1.5" stroke-opacity="0.25"/>
+  <circle cx="256" cy="380" r="85" fill="none" stroke="url(#goldChisel)" stroke-width="1.5" stroke-opacity="0.4"/>
+
+  <!-- The Cyber-Quill Nib with Engraved Cuneiform Wedges -->
+  <g transform="translate(0, -10)">
+    
+    <!-- Stylus Nib Outer Wings (Forged Titanium & Gold Rim) -->
+    <!-- Left Wing -->
+    <path d="M256,90 C210,135 155,200 155,285 C155,340 210,385 252,400 L252,220 C252,205 240,195 240,180 C240,165 252,155 252,130 Z" 
+          fill="url(#cyberObsidian)" stroke="url(#goldChisel)" stroke-width="3"/>
+    
+    <!-- Right Wing -->
+    <path d="M256,90 C302,135 357,200 357,285 C357,340 302,385 260,400 L260,220 C260,205 272,195 272,180 C272,165 260,155 260,130 Z" 
+          fill="url(#cyberObsidian)" stroke="url(#goldChisel)" stroke-width="3"/>
+
+    <!-- Engraved Gold Cuneiform Wedges on the Left Wing -->
+    <g fill="url(#goldChisel)">
+      <polygon points="175,230 195,220 195,240"/>
+      <rect x="195" y="227" width="22" height="6" rx="1"/>
+
+      <polygon points="170,265 190,255 190,275"/>
+      <rect x="190" y="262" width="30" height="6" rx="1"/>
+
+      <polygon points="180,300 200,290 200,310"/>
+      <rect x="200" y="297" width="25" height="6" rx="1"/>
+
+      <!-- Downward Wedge -->
+      <polygon points="215,325 230,325 222,345"/>
+    </g>
+
+    <!-- Engraved Gold Cuneiform Wedges on the Right Wing -->
+    <g fill="url(#goldChisel)">
+      <polygon points="337,230 317,220 317,240"/>
+      <rect x="295" y="227" width="22" height="6" rx="1"/>
+
+      <polygon points="342,265 322,255 322,275"/>
+      <rect x="292" y="262" width="30" height="6" rx="1"/>
+
+      <polygon points="332,300 312,290 312,310"/>
+      <rect x="287" y="297" width="25" height="6" rx="1"/>
+
+      <!-- Downward Wedge -->
+      <polygon points="297,325 282,325 290,345"/>
+    </g>
+
+    <!-- Breather Hole: Sasanian Pearl Eye Core -->
+    <circle cx="256" cy="180" r="18" fill="#0B1324" stroke="url(#goldChisel)" stroke-width="3"/>
+    <circle cx="256" cy="180" r="8" fill="#4EECD6" filter="url(#hybridGlow)"/>
+
+    <!-- Slit: The Glowing Turquoise Acoustic Waveform Pulse -->
+    <g filter="url(#hybridGlow)">
+      <line x1="256" y1="198" x2="256" y2="400" stroke="url(#turqPulse)" stroke-width="4.5" stroke-linecap="round"/>
+      
+      <!-- Waveform Ticks across the Slit -->
+      <line x1="230" y1="240" x2="282" y2="240" stroke="url(#goldChisel)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="220" y1="270" x2="292" y2="270" stroke="#4EECD6" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="210" y1="300" x2="302" y2="300" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+      <line x1="225" y1="330" x2="287" y2="330" stroke="#4EECD6" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="240" y1="360" x2="272" y2="360" stroke="url(#goldChisel)" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Contact Chisel Spark -->
+      <circle cx="256" cy="402" r="6" fill="#FFFFFF"/>
+    </g>
+  </g>
+
+  <!-- Stepped Pre-Islamic Palace Border Frame -->
+  <rect x="22" y="22" width="468" height="468" rx="95" fill="none" stroke="url(#goldChisel)" stroke-width="2" stroke-opacity="0.35"/>
+</svg>

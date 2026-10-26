@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scribir — Minimalist Ancient Persian Quill & Textless Loading</title>
+  <style>
+    :root {
+      --bg-dark: #07090E;
+      --bg-surface: #0E131F;
+      --card-bg: rgba(18, 24, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --gold-bright: #F5C542;
+      --gold-mid: #D4AF37;
+      --gold-deep: #9A7B1C;
+      --lapis-deep: #0D1B36;
+      --turquoise: #4EECD6;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #152238 0%, #080B12 50%, #030407 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 40px 24px 100px;
+    }
+
+    header {
+      text-align: center;
+      max-width: 960px;
+      margin: 0 auto 50px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: rgba(245, 197, 66, 0.15);
+      border: 1px solid rgba(245, 197, 66, 0.4);
+      color: var(--gold-bright);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5C542 50%, #D4AF37 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 14px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* 48x48 Android Real-Size Test Bench */
+    .bench-section {
+      max-width: 1200px;
+      margin: 0 auto 50px;
+      background: rgba(14, 21, 35, 0.85);
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+
+    .bench-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .bench-title h2 {
+      font-size: 22px;
+      color: var(--gold-bright);
+    }
+
+    .bench-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .bench-card {
+      background: #060911;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .bench-card h4 {
+      font-size: 14px;
+      color: #FFFFFF;
+      letter-spacing: 1px;
+    }
+
+    .scales-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+      padding: 16px 0;
+      background: #0B111E;
+      border-radius: 14px;
+    }
+
+    .scale-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scale-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* Target Android Icon Sizes */
+    .icon-48 { width: 48px; height: 48px; border-radius: 11px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .icon-36 { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.5); }
+    .icon-24 { width: 24px; height: 24px; border-radius: 5px; overflow: hidden; }
+
+    .icon-48 img, .icon-48 svg,
+    .icon-36 img, .icon-36 svg,
+    .icon-24 img, .icon-24 svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Cards Grid */
+    .section-header {
+      max-width: 1200px;
+      margin: 60px auto 20px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .section-header h2 {
+      font-size: 26px;
+      color: var(--gold-bright);
+    }
+
+    .section-header span {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .grid-container {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 32px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 197, 66, 0.4);
+    }
+
+    .card .category-pill {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      color: var(--gold-bright);
+    }
+
+    .card h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #FFFFFF;
+    }
+
+    .card p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 18px;
+      flex-grow: 1;
+    }
+
+    .visual-wrapper {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: #04060A;
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .visual-wrapper.portrait {
+      height: 480px;
+    }
+
+    .visual-wrapper img, .visual-wrapper svg {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 14px;
+    }
+
+    /* TEXTLESS ANIMATED SIMULATOR */
+    .simulator-section {
+      max-width: 1200px;
+      margin: 60px auto;
+      background: rgba(14, 21, 35, 0.85);
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      border-radius: 36px;
+      padding: 48px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 48px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .simulator-info {
+      flex: 1;
+      min-width: 320px;
+    }
+
+    .simulator-info h2 {
+      font-size: 28px;
+      color: var(--gold-bright);
+      margin-bottom: 14px;
+    }
+
+    .device-phone {
+      width: 320px;
+      height: 640px;
+      background: #060A14;
+      border-radius: 44px;
+      border: 8px solid #1E293B;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.85), 0 0 50px rgba(78, 236, 214, 0.15);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 40px 20px;
+      user-select: none;
+    }
+
+    .notch {
+      width: 100px;
+      height: 20px;
+      background: #1E293B;
+      border-radius: 0 0 12px 12px;
+      position: absolute;
+      top: 0;
+      left: calc(50% - 50px);
+    }
+
+    /* Pure Textless Animated Quill & Ripple */
+    .phone-center {
+      margin-top: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .quill-motion {
+      width: 140px;
+      height: 140px;
+      position: relative;
+      animation: gentleFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .ripple-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1.5px solid var(--turquoise);
+      border-radius: 50%;
+      animation: rippleExpand 2.5s cubic-bezier(0.1, 0.2, 0.3, 1) infinite;
+      opacity: 0;
+    }
+
+    .ripple-ring:nth-child(2) { animation-delay: 0.8s; }
+    .ripple-ring:nth-child(3) { animation-delay: 1.6s; }
+
+    @keyframes rippleExpand {
+      0% { width: 30px; height: 30px; opacity: 0.8; }
+      100% { width: 220px; height: 220px; opacity: 0; }
+    }
+
+    /* Pure Geometric Progress Indicator (ZERO TEXT) */
+    .progress-dots-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .progress-line-track {
+      width: 160px;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-line-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 50px;
+      background: linear-gradient(90deg, transparent, var(--turquoise), transparent);
+      animation: trackSweep 1.8s infinite linear;
+    }
+
+    @keyframes trackSweep {
+      0% { left: -50px; }
+      100% { left: 160px; }
+    }
+
+    .pipeline-nodes {
+      display: flex;
+      gap: 14px;
+    }
+
+    .pipeline-node {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(245, 197, 66, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .pipeline-node.active {
+      background: var(--turquoise);
+      box-shadow: 0 0 10px var(--turquoise);
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Small-Size & Minimalist Focus</div>
+    <h1>Minimalist Ancient Persian Quill & Textless Loadings</h1>
+    <p>Pure, bold, human-crafted vector geometry designed explicitly for 48×48 px Android legibility and language-agnostic text-free animation.</p>
+  </header>
+
+  <!-- 1. REAL-SIZE 48x48 ANDROID TEST BENCH -->
+  <section class="bench-section">
+    <div class="bench-title">
+      <h2>Android Small-Size Legibility Test Bench</h2>
+      <span style="font-size: 13px; color: var(--text-muted)">Actual rendered pixels on mobile devices</span>
+    </div>
+
+    <div class="bench-grid">
+      <!-- Item 1: Isometric Quill -->
+      <div class="bench-card">
+        <h4>1. Isometric Ancient Quill</h4>
+        <div class="scales-row">
+          <div class="scale-item">
+            <div class="icon-48"><img src="icon_minimal_isometric_quill.svg" alt="48px"></div>
+            <span class="scale-label">48x48</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-36"><img src="icon_minimal_isometric_quill.svg" alt="36px"></div>
+            <span class="scale-label">36x36</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-24"><img src="icon_minimal_isometric_quill.svg" alt="24px"></div>
+            <span class="scale-label">24x24</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 2: Flat Minimalist Quill -->
+      <div class="bench-card">
+        <h4>2. Flat Dual-Tone Quill</h4>
+        <div class="scales-row">
+          <div class="scale-item">
+            <div class="icon-48"><img src="icon_minimal_flat_quill.svg" alt="48px"></div>
+            <span class="scale-label">48x48</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-36"><img src="icon_minimal_flat_quill.svg" alt="36px"></div>
+            <span class="scale-label">36x36</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-24"><img src="icon_minimal_flat_quill.svg" alt="24px"></div>
+            <span class="scale-label">24x24</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 3: Cuneiform-Wedge Quill -->
+      <div class="bench-card">
+        <h4>3. Cuneiform Wedge Quill</h4>
+        <div class="scales-row">
+          <div class="scale-item">
+            <div class="icon-48"><img src="icon_minimal_cuneiform_quill.svg" alt="48px"></div>
+            <span class="scale-label">48x48</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-36"><img src="icon_minimal_cuneiform_quill.svg" alt="36px"></div>
+            <span class="scale-label">36x36</span>
+          </div>
+          <div class="scale-item">
+            <div class="icon-24"><img src="icon_minimal_cuneiform_quill.svg" alt="24px"></div>
+            <span class="scale-label">24x24</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. MINIMALIST ANCIENT PERSIAN QUILL ICONS -->
+  <div class="section-header">
+    <h2>Minimalist Ancient Persian Quill Icons</h2>
+    <span>Non-cluttered, non-AI aesthetic, pure vector forms</span>
+  </div>
+
+  <div class="grid-container">
+    <!-- Card 1: Isometric Vector -->
+    <div class="card">
+      <div class="category-pill">Style A • Isometric 30° Vector</div>
+      <h3>Isometric Ancient Persian Quill (SVG)</h3>
+      <p>Clean 30-degree isometric faceted reed/bronze quill in solid Achaemenid gold tones. The chisel nib rests on 3 bold isometric equalizer soundwave columns.</p>
+      <div class="visual-wrapper">
+        <img src="icon_minimal_isometric_quill.svg" alt="Isometric Quill SVG">
+      </div>
+    </div>
+
+    <!-- Card 2: Isometric Concept Art -->
+    <div class="card">
+      <div class="category-pill">Style A • Concept Art</div>
+      <h3>Isometric Minimalist Concept (Art)</h3>
+      <p>Clean isometric vector illustration of the Persian bronze stylus carving a soundwave bar into deep lapis lazuli navy.</p>
+      <div class="visual-wrapper">
+        <img src="scribir_app_icon_isometric_1792962252035.jpg" alt="Isometric Quill Art">
+      </div>
+    </div>
+
+    <!-- Card 3: Flat Minimalist Vector -->
+    <div class="card">
+      <div class="category-pill">Style B • Flat Swiss / Material Vector</div>
+      <h3>Flat Minimalist Persian Scribe (SVG)</h3>
+      <p>Bold dual-tone silhouette with maximum negative-space contrast. The slit of the reed pen cleanly forms an unmistakable audio pulse notch.</p>
+      <div class="visual-wrapper">
+        <img src="icon_minimal_flat_quill.svg" alt="Flat Minimalist Quill SVG">
+      </div>
+    </div>
+
+    <!-- Card 4: Flat Concept Art -->
+    <div class="card">
+      <div class="category-pill">Style B • Concept Art</div>
+      <h3>Flat Dual-Tone Concept (Art)</h3>
+      <p>High-contrast flat vector art of the ancient Persian reed nib with integrated waveform cutout.</p>
+      <div class="visual-wrapper">
+        <img src="scribir_app_icon_flat_minimalist_1792962274931.jpg" alt="Flat Quill Art">
+      </div>
+    </div>
+
+    <!-- Card 5: Cuneiform Wedge Quill -->
+    <div class="card">
+      <div class="category-pill">Style C • Geometric Cuneiform Wedge</div>
+      <h3>Cuneiform Wedge Quill (SVG)</h3>
+      <p>Nib constructed directly from three interlocking Achaemenid cuneiform wedges with a central soundwave core. Unmistakable at 48px.</p>
+      <div class="visual-wrapper">
+        <img src="icon_minimal_cuneiform_quill.svg" alt="Cuneiform Wedge Quill SVG">
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. TEXTLESS LOADING SCREENS -->
+  <div class="section-header">
+    <h2>100% Textless Loading Screens</h2>
+    <span>Zero typography • Pure universal geometry • Fully themeable</span>
+  </div>
+
+  <div class="grid-container">
+    <!-- Card 6: Pure Sonic Line Vector -->
+    <div class="card">
+      <div class="category-pill">Textless Splash • Vector SVG</div>
+      <h3>The Pure Sonic Line (SVG)</h3>
+      <p>Vertical 9:16 layout. Minimalist golden Persian reed nib drawing an infinite glowing soundwave line. Simple geometric progress line below. Zero text.</p>
+      <div class="visual-wrapper portrait">
+        <img src="splash_minimal_textless_loop.svg" alt="Sonic Line Splash SVG">
+      </div>
+    </div>
+
+    <!-- Card 7: Isometric Diamond Ripple Vector -->
+    <div class="card">
+      <div class="category-pill">Textless Splash • Isometric Vector SVG</div>
+      <h3>Isometric Diamond Ripple (SVG)</h3>
+      <p>Isometric Persian stylus emitting expanding concentric diamond acoustic rings. Bottom features 4 stepping diamond status nodes. Zero text.</p>
+      <div class="visual-wrapper portrait">
+        <img src="splash_minimal_isometric_textless.svg" alt="Isometric Diamond Ripple SVG">
+      </div>
+    </div>
+
+    <!-- Card 8: Isometric Stylus Art -->
+    <div class="card">
+      <div class="category-pill">Textless Splash • Concept Art</div>
+      <h3>Isometric Stylus Ripple (Art)</h3>
+      <p>Clean isometric concept rendering showing the golden Persian stylus creating expanding diamond sound ripples on dark lapis stone. Zero text.</p>
+      <div class="visual-wrapper portrait">
+        <img src="loading_screen_isometric_stylus_1792962263596.jpg" alt="Isometric Stylus Art">
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. TEXTLESS LIVE KINETIC SIMULATOR -->
+  <div class="simulator-section">
+    <div class="simulator-info">
+      <div class="badge">Pure Motion Prototype</div>
+      <h2>Universal Textless Boot Animation</h2>
+      <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 20px;">
+        As requested, this loading screen features <strong>zero embedded text</strong>. It communicates engine warmup, model readiness, and pipeline progress purely through organic kinetic motion, acoustic ripple waves, and geometric pipeline nodes.
+      </p>
+      <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 24px;">
+        Because there is no text in the animation, the app requires zero localization overhead and works seamlessly in Persian, English, or any future language.
+      </p>
+    </div>
+
+    <!-- Smartphone Frame -->
+    <div class="device-phone">
+      <div class="notch"></div>
+      
+      <!-- Central Animated Quill & Concentric Acoustic Shockwaves -->
+      <div class="phone-center">
+        <!-- Expanding Acoustic Rings -->
+        <div class="ripple-ring"></div>
+        <div class="ripple-ring"></div>
+        <div class="ripple-ring"></div>
+
+        <!-- Minimalist Stylus Vector -->
+        <div class="quill-motion">
+          <svg viewBox="0 0 100 100">
+            <!-- Nib Body -->
+            <path d="M50,15 C38,30 25,50 25,70 C25,82 40,90 48,93 L48,50 L52,50 L52,93 C60,90 75,82 75,70 C75,50 62,30 50,15 Z" 
+                  fill="#F5C542"/>
+            <!-- Breather Core -->
+            <circle cx="50" cy="45" r="5" fill="#060A14"/>
+            <!-- Waveform Slit -->
+            <line x1="50" y1="50" x2="50" y2="92" stroke="#4EECD6" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="50" cy="93" r="3" fill="#FFFFFF"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Bottom Pure Geometric Progress (ZERO TEXT) -->
+      <div class="progress-dots-container">
+        <div class="progress-line-track">
+          <div class="progress-line-fill"></div>
+        </div>
+        <div class="pipeline-nodes" id="pipelineNodes">
+          <div class="pipeline-node active"></div>
+          <div class="pipeline-node"></div>
+          <div class="pipeline-node"></div>
+          <div class="pipeline-node"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate multi-stage pipeline state progression through geometric nodes only
+    const nodes = document.querySelectorAll('.pipeline-node');
+    let activeIndex = 0;
+
+    setInterval(() => {
+      nodes.forEach((node, idx) => {
+        if (idx <= activeIndex) {
+          node.classList.add('active');
+        } else {
+          node.classList.remove('active');
+        }
+      });
+      activeIndex = (activeIndex + 1) % nodes.length;
+    }, 1200);
+  </script>
+</body>
+</html>

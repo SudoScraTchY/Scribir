@@ -67,6 +67,13 @@ public class TranscriptionPipelineTests
         }
     }
 
+    private sealed class SynchronousProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _handler;
+        public SynchronousProgress(Action<T> handler) => _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        public void Report(T value) => _handler(value);
+    }
+
     [Fact]
     public async Task ProcessAsync_FullRun_ProducesValidTranscriptWithProgress()
     {
@@ -83,7 +90,7 @@ public class TranscriptionPipelineTests
             normalizer: normalizer);
 
         var progressUpdates = new List<PipelineProgress>();
-        var progress = new Progress<PipelineProgress>(p => progressUpdates.Add(p));
+        var progress = new SynchronousProgress<PipelineProgress>(p => progressUpdates.Add(p));
 
         var options = new TranscriptionPipelineOptions
         {

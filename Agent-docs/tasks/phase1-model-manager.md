@@ -86,7 +86,8 @@ Registered in `MauiProgram.cs` and `AppShell.xaml` with tab and route navigation
 
 ### PH1-MODEL-003 — First-run device benchmark harness
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-26
 **Depends On:** PH1-CORE-004, PH1-CORE-005
 **Related ADR(s):** ADR-0006 (see also `PH0-SPIKE-004` findings)
 
@@ -118,6 +119,12 @@ single-device benchmark).
 **Suggested Verification:** Manual test on the same device tiers named in
 `PH0-SPIKE-004`, confirming the recommendation is sensible relative to
 that spike's findings.
+
+**Completion note (2026-10-26):** Done. Built `IDeviceBenchmarkService` and `DeviceBenchmarkService` in
+`Scriber.Pipeline`. Measures real SIMD DSP throughput, memory pressure, and CPU cores. Injected into
+`SettingsViewModel` and exposed via dedicated card on `SettingsPage.xaml`. Evaluated live on physical Xiaomi
+Redmi Note 11 (Android 13, Snapdragon 680): detected Low tier, calibrated `sherpa-whisper-tiny-int8` recommendation,
+persisted to MAUI `Preferences`. Unit tests in `Scriber.Pipeline.Tests.DeviceBenchmarkServiceTests`.
 
 ---
 

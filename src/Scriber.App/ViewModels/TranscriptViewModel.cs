@@ -39,6 +39,19 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     public string Title => _transcript?.Title ?? "Transcript";
     public string LanguageCode => _transcript?.LanguageCode ?? string.Empty;
     public string DurationFormatted => _transcript != null ? $"{_transcript.Audio.Duration:hh\\:mm\\:ss}" : string.Empty;
+    public FlowDirection LayoutDirection => IsRightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+    public bool IsRightToLeft => IsRtlLanguage(_transcript?.LanguageCode);
+
+    private static bool IsRtlLanguage(string? langCode)
+    {
+        if (string.IsNullOrWhiteSpace(langCode)) return false;
+        string code = langCode.Trim().ToLowerInvariant();
+        return code.StartsWith("fa") ||
+               code.StartsWith("ar") ||
+               code.StartsWith("he") ||
+               code.StartsWith("ur") ||
+               code.StartsWith("per");
+    }
 
     public string? SummaryOverview
     {
@@ -118,6 +131,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
     public ICommand PlayPauseCommand { get; }
     public ICommand SeekToSegmentCommand { get; }
+    public ICommand SeekCommand { get; }
     public ICommand SaveEditCommand { get; }
     public ICommand ExportCommand { get; }
     public ICommand RenameSpeakerCommand { get; }
@@ -145,6 +159,11 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         PlayPauseCommand = new Command(TogglePlayPause);
         SeekToSegmentCommand = new Command<SegmentItemViewModel>(SeekToSegment);
+        SeekCommand = new Command<object>(p =>
+        {
+            if (p is double d) SeekToFraction(d);
+            else if (p is float f) SeekToFraction(f);
+        });
         SaveEditCommand = new Command<SegmentItemViewModel>(async s => await SaveEditAsync(s));
         ExportCommand = new Command(async () => await PromptExportAsync());
         RenameSpeakerCommand = new Command<Speaker>(async s => await HandleSpeakerClickAsync(s));
@@ -236,6 +255,8 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(LanguageCode));
                 OnPropertyChanged(nameof(DurationFormatted));
+                OnPropertyChanged(nameof(IsRightToLeft));
+                OnPropertyChanged(nameof(LayoutDirection));
                 DurationText = $"{transcript.Audio.Duration:mm\\:ss}";
 
                 Speakers.Clear();
@@ -348,6 +369,8 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             "Export Transcript",
             "Cancel",
             null,
+            "Microsoft Word Document (.docx)",
+            "PDF Document (.pdf)",
             "Markdown Document (.md)",
             "Interactive HTML (.html)",
             "CSV Spreadsheet (.csv)",
@@ -360,6 +383,8 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
         ITranscriptExporter exporter = action switch
         {
+            "Microsoft Word Document (.docx)" => new DocxExporter(),
+            "PDF Document (.pdf)" => new PdfExporter(),
             "Markdown Document (.md)" => new MarkdownExporter(),
             "Interactive HTML (.html)" => new HtmlExporter(),
             "CSV Spreadsheet (.csv)" => new CsvExporter(),
@@ -395,8 +420,6 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             }
         }
 
-        string exportedContent = exporter.Export(exportTranscript);
-
         string delivery = await Shell.Current.DisplayActionSheetAsync(
             $"Export {exporter.FormatName}",
             "Cancel",
@@ -410,7 +433,11 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
             if (string.IsNullOrWhiteSpace(safeTitle)) safeTitle = "transcript";
             string fileName = $"{safeTitle}{exporter.FileExtension}";
             string tempPath = Path.Combine(FileSystem.CacheDirectory, fileName);
-            await File.WriteAllTextAsync(tempPath, exportedContent);
+
+            await using (var fs = File.Create(tempPath))
+            {
+                await exporter.ExportAsync(exportTranscript, fs);
+            }
 
             await Share.Default.RequestAsync(new ShareFileRequest
             {
@@ -420,7 +447,16 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         }
         else if (delivery == "Copy to Clipboard")
         {
-            await Clipboard.Default.SetTextAsync(exportedContent);
+            string textContent;
+            if (exporter is DocxExporter or PdfExporter)
+            {
+                textContent = new MarkdownExporter().Export(exportTranscript);
+            }
+            else
+            {
+                textContent = exporter.Export(exportTranscript);
+            }
+            await Clipboard.Default.SetTextAsync(textContent);
             await Shell.Current.DisplayAlertAsync("Exported", $"{exporter.FormatName} copied to clipboard!", "OK");
         }
     }

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <!-- Deep Lapis / Obsidian Background -->
+    <radialGradient id="bgTextless" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#121D36"/>
+      <stop offset="60%" stop-color="#080E1C"/>
+      <stop offset="100%" stop-color="#03060C"/>
+    </radialGradient>
+
+    <linearGradient id="goldTextless" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="50%" stop-color="#F3C644"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+
+    <linearGradient id="turqPulseLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0E8388" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#0E8388"/>
+      <stop offset="50%" stop-color="#4EECD6"/>
+      <stop offset="75%" stop-color="#0E8388"/>
+      <stop offset="100%" stop-color="#0E8388" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="subtleGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Clean Canvas Background -->
+  <rect width="1080" height="1920" fill="url(#bgTextless)"/>
+
+  <!-- Minimalist Geometric Frame (Zero Text) -->
+  <rect x="80" y="80" width="920" height="1760" rx="32" fill="none" stroke="url(#goldTextless)" stroke-width="1.5" stroke-opacity="0.2"/>
+
+  <!-- Central Kinetic Visual: Minimalist Ancient Quill + Flowing Soundwave -->
+  <g transform="translate(540, 860)">
+    
+    <!-- Concentric Acoustic Resonator Circles (Pure Geometry) -->
+    <circle cx="0" cy="0" r="280" fill="none" stroke="url(#goldTextless)" stroke-width="1" stroke-opacity="0.1" stroke-dasharray="8 12"/>
+    <circle cx="0" cy="0" r="210" fill="none" stroke="#4EECD6" stroke-width="1.5" stroke-opacity="0.25"/>
+    <circle cx="0" cy="0" r="140" fill="none" stroke="url(#goldTextless)" stroke-width="1.5" stroke-opacity="0.35"/>
+
+    <!-- Minimalist Ancient Quill Nib Silhouette -->
+    <g transform="translate(0, -60)" filter="url(#subtleGlow)">
+      <!-- Left Nib Wing -->
+      <path d="M-80,-100 C-80,-20 -40,40 -12,120 L-12,20 C-12,5 -18,-5 -18,-18 C-18,-30 -12,-40 -12,-100 Z" 
+            fill="#F3C644"/>
+      
+      <!-- Right Nib Wing -->
+      <path d="M80,-100 C80,-20 40,40 12,120 L12,20 C12,5 18,-5 18,-18 C18,-30 12,-40 12,-100 Z" 
+            fill="#D4AF37"/>
+
+      <!-- Breather Core -->
+      <circle cx="0" cy="-35" r="18" fill="#080E1C" stroke="#F3C644" stroke-width="3"/>
+      <circle cx="0" cy="-35" r="7" fill="#4EECD6"/>
+
+      <!-- Center Writing Spark -->
+      <circle cx="0" cy="122" r="8" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Continuous Audio Waveform Line passing under the Nib -->
+    <path d="M-380,140 Q-280,60 -190,140 T0,140 T190,140 T380,140" 
+          fill="none" stroke="url(#turqPulseLine)" stroke-width="4.5" stroke-linecap="round" filter="url(#subtleGlow)"/>
+    <path d="M-280,175 Q-140,110 0,175 T280,175" 
+          fill="none" stroke="url(#goldTextless)" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+
+    <!-- Geometric Ripple Nodes -->
+    <circle cx="-190" cy="140" r="5" fill="#4EECD6"/>
+    <circle cx="0" cy="140" r="6" fill="#FFFFFF"/>
+    <circle cx="190" cy="140" r="5" fill="#4EECD6"/>
+  </g>
+
+  <!-- Bottom Loading Indicator (100% PURE GEOMETRY, NO TEXT) -->
+  <g transform="translate(540, 1480)">
+    <!-- Outer Track Line -->
+    <line x1="-180" y1="0" x2="180" y2="0" stroke="url(#goldTextless)" stroke-width="2" stroke-opacity="0.2" stroke-linecap="round"/>
+    
+    <!-- Active Progress Sweep Segment -->
+    <line x1="-80" y1="0" x2="90" y2="0" stroke="#4EECD6" stroke-width="5" stroke-linecap="round" filter="url(#subtleGlow)"/>
+    
+    <!-- Moving Pulse Point -->
+    <circle cx="90" cy="0" r="6" fill="#FFFFFF"/>
+
+    <!-- Minimal Geometric Status Dots below (Indicating 3-stage pipeline without text) -->
+    <g transform="translate(0, 50)">
+      <circle cx="-40" cy="0" r="5" fill="#4EECD6"/>
+      <circle cx="0" cy="0" r="5" fill="#F3C644"/>
+      <circle cx="40" cy="0" r="5" fill="#F3C644" opacity="0.3"/>
+    </g>
+  </g>
+</svg>

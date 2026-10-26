@@ -7,6 +7,7 @@ using Scriber.Storage;
 using Scriber.Storage.Models;
 
 using Scriber.App.Services.Audio;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace Scriber.App;
 
@@ -17,6 +18,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseSkiaSharp()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -58,6 +60,7 @@ public static class MauiProgram
             sp.GetRequiredService<IVoiceprintRepository>(),
             sp.GetRequiredService<ISpeakerEmbedder>(),
             sp.GetRequiredService<Scriber.Inference.SpeakerId.SpeakerMatcher>()));
+        builder.Services.AddSingleton<Scriber.Pipeline.Benchmark.IDeviceBenchmarkService, Scriber.Pipeline.Benchmark.DeviceBenchmarkService>();
         builder.Services.AddTransient<IAudioRecorder>(_ => AudioRecorderFactory.Create());
 
         // BYOK Provider & Summarizer (PH2-INT-001, PH2-INT-003)
@@ -76,7 +79,8 @@ public static class MauiProgram
             sp.GetRequiredService<IVoiceprintRepository>(),
             sp.GetRequiredService<Scriber.Providers.IProviderSettingsStore>(),
             sp.GetRequiredService<Scriber.Providers.ICompletionProvider>(),
-            dbPath));
+            dbPath,
+            sp.GetService<Scriber.Pipeline.Benchmark.IDeviceBenchmarkService>()));
 
         // 3. Views (Shell Tab roots are Singletons for instant switching without lag)
         builder.Services.AddSingleton<TranscribePage>();

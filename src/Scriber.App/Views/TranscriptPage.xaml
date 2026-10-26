@@ -2,11 +2,13 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Scriber.App.ViewModels"
+             xmlns:controls="clr-namespace:Scriber.App.Controls"
              xmlns:domain="clr-namespace:Scriber.Core.Domain;assembly=Scriber.Core"
              xmlns:providers="clr-namespace:Scriber.Providers;assembly=Scriber.Providers"
              x:Class="Scriber.App.Views.TranscriptPage"
              x:DataType="vm:TranscriptViewModel"
              Title="{Binding Title}"
+             FlowDirection="{Binding LayoutDirection}"
              BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
 
     <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
@@ -202,9 +204,12 @@
                         FontAttributes="Bold" WidthRequest="84" HeightRequest="40" CornerRadius="8"
                         BackgroundColor="{StaticResource Primary}" TextColor="White" />
 
-                <!-- Scrubber Slider & Timestamps -->
-                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                    <Slider Minimum="0.0" Maximum="1.0" Value="{Binding PlaybackProgress}" MinimumTrackColor="{StaticResource Primary}" ThumbColor="{StaticResource Primary}" />
+                <!-- SkiaSharp Waveform Scrubber (ADR-0002, PH1-UI-004) -->
+                <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                    <controls:SkiaWaveformScrubber HeightRequest="36"
+                                                  Progress="{Binding PlaybackProgress}"
+                                                  SeekCommand="{Binding SeekCommand}"
+                                                  HorizontalOptions="Fill" />
                     <Grid ColumnDefinitions="*, *">
                         <Label Grid.Column="0" Text="{Binding CurrentPositionText}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                         <Label Grid.Column="1" Text="{Binding DurationText}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" HorizontalTextAlignment="End" />

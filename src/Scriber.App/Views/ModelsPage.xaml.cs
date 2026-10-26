@@ -5,6 +5,7 @@ namespace Scriber.App.Views;
 public partial class ModelsPage : ContentPage
 {
     private readonly ModelsViewModel _viewModel;
+    private bool _hasAppearedOnce;
 
     public ModelsPage(ModelsViewModel viewModel)
     {
@@ -16,6 +17,12 @@ public partial class ModelsPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        _viewModel.RefreshAllStatuses();
+        // Skip blocking on initial appearance since ViewModel initializes catalog asynchronously.
+        // On subsequent appearances, refresh statuses smoothly in background.
+        if (_hasAppearedOnce)
+        {
+            _viewModel.RefreshAllStatuses();
+        }
+        _hasAppearedOnce = true;
     }
 }

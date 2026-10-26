@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgIso" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#14213D"/>
+      <stop offset="60%" stop-color="#0A1120"/>
+      <stop offset="100%" stop-color="#04070D"/>
+    </radialGradient>
+
+    <!-- Gold Gradients -->
+    <linearGradient id="goldIso" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="50%" stop-color="#F3C644"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+
+    <filter id="isoGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Deep Canvas -->
+  <rect width="1080" height="1920" fill="url(#bgIso)"/>
+
+  <!-- Minimal Outer Frame -->
+  <rect x="80" y="80" width="920" height="1760" rx="36" fill="none" stroke="url(#goldIso)" stroke-width="1.5" stroke-opacity="0.2"/>
+
+  <!-- Central Isometric Composition (Zero Text) -->
+  <g transform="translate(540, 880)">
+    
+    <!-- Expanding Isometric Diamond Soundwave Rings -->
+    <!-- Diamond Ring 1 (Outer) -->
+    <polygon points="0,-360 480,0 0,360 -480,0" fill="none" stroke="url(#goldIso)" stroke-width="1" stroke-opacity="0.1" stroke-dasharray="10 14"/>
+    
+    <!-- Diamond Ring 2 (Mid) -->
+    <polygon points="0,-260 350,0 0,260 -350,0" fill="none" stroke="#4EECD6" stroke-width="1.5" stroke-opacity="0.25"/>
+    
+    <!-- Diamond Ring 3 (Inner Active) -->
+    <polygon points="0,-160 220,0 0,160 -220,0" fill="none" stroke="url(#goldIso)" stroke-width="2" stroke-opacity="0.4" filter="url(#isoGlow)"/>
+
+    <!-- Isometric Surface Grid Lines -->
+    <line x1="-300" y1="180" x2="300" y2="-180" stroke="#4EECD6" stroke-width="1" stroke-opacity="0.12"/>
+    <line x1="-300" y1="-180" x2="300" y2="180" stroke="#4EECD6" stroke-width="1" stroke-opacity="0.12"/>
+
+    <!-- Central Isometric Stylus (The Ancient Scribe Tool) -->
+    <g transform="translate(0, -90)" filter="url(#isoGlow)">
+      <!-- Upper Shaft Top Face -->
+      <polygon points="0,-160 55,-195 95,-130 40,-95" fill="#FFF6D1"/>
+      <!-- Upper Shaft Left Face -->
+      <polygon points="0,-160 40,-95 -40,-50 -80,-115" fill="#F3C644"/>
+
+      <!-- Nib Left Blade -->
+      <polygon points="-40,-50 40,-95 0,70" fill="#D4AF37"/>
+      <!-- Nib Right Blade -->
+      <polygon points="40,-95 95,-130 0,70" fill="#9A7B1C"/>
+
+      <!-- Isometric Slit Cutout -->
+      <polygon points="0,-25 15,-42 0,65 -15,30" fill="#0A1120"/>
+
+      <!-- Tip Contact Light -->
+      <circle cx="0" cy="72" r="10" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Point of Contact Isometric Acoustic Nodes -->
+    <g transform="translate(0, 72)">
+      <circle cx="-110" cy="0" r="6" fill="#4EECD6"/>
+      <circle cx="110" cy="0" r="6" fill="#4EECD6"/>
+      <circle cx="0" cy="-65" r="5" fill="#F3C644"/>
+      <circle cx="0" cy="65" r="5" fill="#F3C644"/>
+    </g>
+  </g>
+
+  <!-- Bottom Loading Indicator: Pure Geometric Isometric Stepping Blocks (NO TEXT) -->
+  <g transform="translate(540, 1500)">
+    <!-- 4 Isometric Progress Diamonds -->
+    <!-- Diamond 1 (Done) -->
+    <g transform="translate(-120, 0)">
+      <polygon points="0,-18 24,0 0,18 -24,0" fill="#4EECD6" filter="url(#isoGlow)"/>
+    </g>
+    <!-- Diamond 2 (Done) -->
+    <g transform="translate(-40, 0)">
+      <polygon points="0,-18 24,0 0,18 -24,0" fill="#4EECD6" filter="url(#isoGlow)"/>
+    </g>
+    <!-- Diamond 3 (Active Pulse) -->
+    <g transform="translate(40, 0)">
+      <polygon points="0,-18 24,0 0,18 -24,0" fill="#F3C644" filter="url(#isoGlow)"/>
+      <polygon points="0,-8 11,0 0,8 -11,0" fill="#FFFFFF"/>
+    </g>
+    <!-- Diamond 4 (Pending) -->
+    <g transform="translate(120, 0)">
+      <polygon points="0,-18 24,0 0,18 -24,0" fill="none" stroke="url(#goldIso)" stroke-width="2" stroke-opacity="0.3"/>
+    </g>
+  </g>
+</svg>

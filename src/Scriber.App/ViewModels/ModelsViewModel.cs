@@ -101,44 +101,82 @@ public sealed class ModelsViewModel : BaseViewModel
 
         DownloadModelCommand = new Command<ModelItemViewModel>(async m => await DownloadModelAsync(m));
         DeleteModelCommand = new Command<ModelItemViewModel>(async m => await DeleteModelAsync(m));
-        RefreshStatusCommand = new Command(RefreshAllStatuses);
+        RefreshStatusCommand = new Command(async () => await RefreshAllStatusesAsync());
         OpenSourceUrlCommand = new Command<ModelItemViewModel>(async m => await OpenSourceUrlAsync(m));
 
-        LoadCatalog();
+        _summaryText = "Loading on-device model catalog...";
+        _isLoading = true;
+
+        // Decouple page loading from item loading: page shell renders instantly, items load in background
+        _ = Task.Run(async () => await LoadCatalogAsync());
     }
 
-    public void LoadCatalog()
+    public async Task LoadCatalogAsync()
     {
-        IsLoading = true;
         try
         {
-            _allModels.Clear();
+            await MainThread.InvokeOnMainThreadAsync(() => IsLoading = true);
+
+            // Fetch catalog and calculate disk statuses off the UI thread
             var catalog = _catalogService.GetCatalog();
+            var items = new List<ModelItemViewModel>(catalog.Models.Count);
 
             foreach (var entry in catalog.Models)
             {
                 var status = _cacheManager.GetStatus(entry);
-                var item = new ModelItemViewModel(entry, status);
-                _allModels.Add(item);
+                items.Add(new ModelItemViewModel(entry, status));
             }
 
-            ApplyFilters();
-            UpdateSummary();
+            // Populate on MainThread without locking UI during layout
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                _allModels.Clear();
+                _allModels.AddRange(items);
+                ApplyFilters();
+                UpdateSummary();
+            });
+        }
+        catch (Exception ex)
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                SummaryText = $"Catalog error: {ex.Message}";
+            });
         }
         finally
         {
-            IsLoading = false;
+            await MainThread.InvokeOnMainThreadAsync(() => IsLoading = false);
         }
+    }
+
+    public void LoadCatalog()
+    {
+        _ = Task.Run(async () => await LoadCatalogAsync());
+    }
+
+    public async Task RefreshAllStatusesAsync()
+    {
+        if (_allModels.Count == 0)
+        {
+            await LoadCatalogAsync();
+            return;
+        }
+
+        await Task.Run(() =>
+        {
+            foreach (var item in _allModels)
+            {
+                var status = _cacheManager.GetStatus(item.Entry);
+                MainThread.BeginInvokeOnMainThread(() => item.UpdateStatus(status));
+            }
+        });
+
+        await MainThread.InvokeOnMainThreadAsync(UpdateSummary);
     }
 
     public void RefreshAllStatuses()
     {
-        foreach (var item in _allModels)
-        {
-            var status = _cacheManager.GetStatus(item.Entry);
-            item.UpdateStatus(status);
-        }
-        UpdateSummary();
+        _ = Task.Run(async () => await RefreshAllStatusesAsync());
     }
 
     private void ApplyFilters()

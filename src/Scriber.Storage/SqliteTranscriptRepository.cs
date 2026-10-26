@@ -19,13 +19,23 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
     private bool _initialized;
     private bool _disposed;
 
-    public SqliteTranscriptRepository(string databasePathOrConnectionString)
+    static SqliteTranscriptRepository()
+    {
+        SQLitePCL.Batteries_V2.Init();
+    }
+
+    public SqliteTranscriptRepository(string databasePathOrConnectionString, string? password = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(databasePathOrConnectionString);
 
         if (databasePathOrConnectionString.Contains('='))
         {
-            _connectionString = databasePathOrConnectionString;
+            var builder = new SqliteConnectionStringBuilder(databasePathOrConnectionString);
+            if (!string.IsNullOrEmpty(password))
+            {
+                builder.Password = password;
+            }
+            _connectionString = builder.ConnectionString;
         }
         else
         {
@@ -34,11 +44,16 @@ public sealed class SqliteTranscriptRepository : ITranscriptRepository, IDisposa
             {
                 Directory.CreateDirectory(dir);
             }
-            _connectionString = new SqliteConnectionStringBuilder
+            var builder = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePathOrConnectionString,
                 Mode = SqliteOpenMode.ReadWriteCreate
-            }.ConnectionString;
+            };
+            if (!string.IsNullOrEmpty(password))
+            {
+                builder.Password = password;
+            }
+            _connectionString = builder.ConnectionString;
         }
 
         // Keep a single open connection for in-memory databases to persist data across operations

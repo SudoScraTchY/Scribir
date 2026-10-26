@@ -63,43 +63,72 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- Model List & Offline Disclosure Banner -->
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Spacing="12" Padding="16" MaximumWidthRequest="760" HorizontalOptions="Center">
+        <!-- Virtualized Model List with Clean Asynchronous Item Loading -->
+        <Grid Grid.Row="1">
+            <!-- Loading Indicator & Skeleton while catalog items are loading in background -->
+            <VerticalStackLayout IsVisible="{Binding IsLoading}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="14"
+                                 Padding="30">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="44"
+                                   WidthRequest="44"
+                                   HorizontalOptions="Center" />
+                <Label Text="Loading AI model catalog &amp; checking on-device cache..."
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"
+                       HorizontalTextAlignment="Center" />
+                <Label Text="This page shell is ready while items load smoothly."
+                       FontSize="11"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
 
-                <!-- Offline & Direct Download Disclosure Banner (ADR-0009) -->
-                <Border StrokeThickness="1" Stroke="#3B82F6"
-                        BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E293B}"
-                        Padding="14">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="10" />
-                    </Border.StrokeShape>
-                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Grid.Column="0" Text="🛡️" FontSize="22" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
-                            <Label Text="100% On-Device &amp; Offline Privacy" FontSize="13" FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light=#1E40AF, Dark=#93C5FD}" />
-                            <Label Text="Model files are downloaded directly from upstream open-weights repositories (Hugging Face / GitHub). No audio or user data is ever uploaded. Once downloaded, all speech transcription and biometric speaker identification run locally on your device."
-                                   FontSize="11" LineBreakMode="WordWrap"
-                                   TextColor="{AppThemeBinding Light=#1E3A8A, Dark=#BFDBFE}" />
-                        </VerticalStackLayout>
-                    </Grid>
-                </Border>
+            <!-- Virtualized CollectionView directly under Grid row with Header -->
+            <CollectionView ItemsSource="{Binding FilteredModels}"
+                            ItemSizingStrategy="MeasureFirstItem"
+                            SelectionMode="None">
+                <CollectionView.Header>
+                    <VerticalStackLayout Spacing="12" Padding="16,12,16,6" MaximumWidthRequest="760" HorizontalOptions="Center">
+                        <!-- Offline & Direct Download Disclosure Banner (ADR-0009) -->
+                        <Border StrokeThickness="1" Stroke="#3B82F6"
+                                BackgroundColor="{AppThemeBinding Light=#EFF6FF, Dark=#1E293B}"
+                                Padding="14">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                                <Label Grid.Column="0" Text="🛡️" FontSize="22" VerticalOptions="Center" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <Label Text="100% On-Device &amp; Offline Privacy" FontSize="13" FontAttributes="Bold"
+                                           TextColor="{AppThemeBinding Light=#1E40AF, Dark=#93C5FD}" />
+                                    <Label Text="Model files are downloaded directly from upstream open-weights repositories (Hugging Face / GitHub). No audio or user data is ever uploaded. Once downloaded, all speech transcription and biometric speaker identification run locally on your device."
+                                           FontSize="11" LineBreakMode="WordWrap"
+                                           TextColor="{AppThemeBinding Light=#1E3A8A, Dark=#BFDBFE}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </CollectionView.Header>
 
-                <!-- Model Cards Collection -->
-                <CollectionView ItemsSource="{Binding FilteredModels}">
-                    <CollectionView.EmptyView>
-                        <VerticalStackLayout Spacing="8" Padding="20" HorizontalOptions="Center">
-                            <Label Text="No matching models found" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
-                            <Label Text="Try adjusting your search query or filter chips above." FontSize="12" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
-                        </VerticalStackLayout>
-                    </CollectionView.EmptyView>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ModelItemViewModel">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                                         Spacing="8" Padding="20" HorizontalOptions="Center">
+                        <Label Text="No matching models found" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}" />
+                        <Label Text="Try adjusting your search query or filter chips above." FontSize="12" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ModelItemViewModel">
+                        <Grid Padding="16,4" MaximumWidthRequest="760" HorizontalOptions="Center">
                             <Border StrokeThickness="1"
                                     Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
-                                    Padding="16" Margin="0,6">
+                                    Padding="16" Margin="0,4">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="12" />
                                 </Border.StrokeShape>
@@ -202,11 +231,10 @@
 
                                 </VerticalStackLayout>
                             </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-
-            </VerticalStackLayout>
-        </ScrollView>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
     </Grid>
 </ContentPage>

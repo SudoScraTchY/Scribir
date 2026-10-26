@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgSasanian" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#1A2D4C"/>
+      <stop offset="60%" stop-color="#0B172B"/>
+      <stop offset="100%" stop-color="#040810"/>
+    </radialGradient>
+
+    <!-- Imperial Gold Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5C2"/>
+      <stop offset="30%" stop-color="#E5C158"/>
+      <stop offset="70%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#876510"/>
+    </linearGradient>
+
+    <!-- Pearl Shader (3D Sasanian Pearl Bead) -->
+    <radialGradient id="pearlShine" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#FDF0CD"/>
+      <stop offset="75%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#5B450C"/>
+    </radialGradient>
+
+    <!-- Turquoise Waveform Gradient -->
+    <linearGradient id="turqGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4EECD6"/>
+      <stop offset="50%" stop-color="#14A090"/>
+      <stop offset="100%" stop-color="#0A5C53"/>
+    </linearGradient>
+
+    <filter id="lotusGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Base -->
+  <rect width="512" height="512" rx="115" fill="url(#bgSasanian)"/>
+
+  <!-- Sasanian Pearl Roundel Border (24 Beads arranged radially at R=195) -->
+  <g id="pearlRoundel">
+    <!-- Circle guideline -->
+    <circle cx="256" cy="256" r="195" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-opacity="0.3"/>
+    <circle cx="256" cy="256" r="176" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-opacity="0.2"/>
+
+    <!-- 24 3D Beaded Sasanian Pearls -->
+    <!-- 0 deg --> <circle cx="451" cy="256" r="10" fill="url(#pearlShine)"/>
+    <!-- 15 deg --> <circle cx="444" cy="306" r="10" fill="url(#pearlShine)"/>
+    <!-- 30 deg --> <circle cx="425" cy="353" r="10" fill="url(#pearlShine)"/>
+    <!-- 45 deg --> <circle cx="394" cy="394" r="10" fill="url(#pearlShine)"/>
+    <!-- 60 deg --> <circle cx="353" cy="425" r="10" fill="url(#pearlShine)"/>
+    <!-- 75 deg --> <circle cx="306" cy="444" r="10" fill="url(#pearlShine)"/>
+    <!-- 90 deg --> <circle cx="256" cy="451" r="10" fill="url(#pearlShine)"/>
+    <!-- 105 deg --> <circle cx="206" cy="444" r="10" fill="url(#pearlShine)"/>
+    <!-- 120 deg --> <circle cx="159" cy="425" r="10" fill="url(#pearlShine)"/>
+    <!-- 135 deg --> <circle cx="118" cy="394" r="10" fill="url(#pearlShine)"/>
+    <!-- 150 deg --> <circle cx="87" cy="353" r="10" fill="url(#pearlShine)"/>
+    <!-- 165 deg --> <circle cx="68" cy="306" r="10" fill="url(#pearlShine)"/>
+    <!-- 180 deg --> <circle cx="61" cy="256" r="10" fill="url(#pearlShine)"/>
+    <!-- 195 deg --> <circle cx="68" cy="206" r="10" fill="url(#pearlShine)"/>
+    <!-- 210 deg --> <circle cx="87" cy="159" r="10" fill="url(#pearlShine)"/>
+    <!-- 225 deg --> <circle cx="118" cy="118" r="10" fill="url(#pearlShine)"/>
+    <!-- 240 deg --> <circle cx="159" cy="87" r="10" fill="url(#pearlShine)"/>
+    <!-- 255 deg --> <circle cx="206" cy="68" r="10" fill="url(#pearlShine)"/>
+    <!-- 270 deg --> <circle cx="256" cy="61" r="10" fill="url(#pearlShine)"/>
+    <!-- 285 deg --> <circle cx="306" cy="68" r="10" fill="url(#pearlShine)"/>
+    <!-- 300 deg --> <circle cx="353" cy="87" r="10" fill="url(#pearlShine)"/>
+    <!-- 315 deg --> <circle cx="394" cy="118" r="10" fill="url(#pearlShine)"/>
+    <!-- 330 deg --> <circle cx="425" cy="159" r="10" fill="url(#pearlShine)"/>
+    <!-- 345 deg --> <circle cx="444" cy="206" r="10" fill="url(#pearlShine)"/>
+  </g>
+
+  <!-- Acoustic Radials (Soundwave Rings emanating from Lotus) -->
+  <circle cx="256" cy="256" r="145" fill="none" stroke="url(#turqGrad)" stroke-width="2" stroke-opacity="0.4" stroke-dasharray="14 10"/>
+  <circle cx="256" cy="256" r="115" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Persepolis 12-Petal Niloufar (Achaemenid Royal Lotus) with Soundwave Ripples -->
+  <g id="niloufarCore" filter="url(#lotusGlow)">
+    <!-- 12 Petals generated via rotation of an authentic Achaemenid rounded teardrop petal -->
+    <g transform="translate(256, 256)">
+      <!-- Petal 1 (0 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" fill="url(#goldGrad)"/>
+      <!-- Petal 2 (30 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(30)" fill="url(#turqGrad)"/>
+      <!-- Petal 3 (60 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(60)" fill="url(#goldGrad)"/>
+      <!-- Petal 4 (90 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(90)" fill="url(#turqGrad)"/>
+      <!-- Petal 5 (120 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(120)" fill="url(#goldGrad)"/>
+      <!-- Petal 6 (150 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(150)" fill="url(#turqGrad)"/>
+      <!-- Petal 7 (180 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(180)" fill="url(#goldGrad)"/>
+      <!-- Petal 8 (210 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(210)" fill="url(#turqGrad)"/>
+      <!-- Petal 9 (240 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(240)" fill="url(#goldGrad)"/>
+      <!-- Petal 10 (270 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(270)" fill="url(#turqGrad)"/>
+      <!-- Petal 11 (300 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(300)" fill="url(#goldGrad)"/>
+      <!-- Petal 12 (330 deg) -->
+      <path d="M0,0 C12,-30 22,-65 0,-90 C-22,-65 -12,-30 0,0 Z" transform="rotate(330)" fill="url(#turqGrad)"/>
+
+      <!-- Center Acoustic Diaphragm / Golden Scribe Core -->
+      <circle cx="0" cy="0" r="28" fill="url(#pearlShine)"/>
+      <circle cx="0" cy="0" r="18" fill="#0B172B"/>
+      <circle cx="0" cy="0" r="8" fill="#4EECD6"/>
+    </g>
+  </g>
+
+  <!-- Stepped Perimeter Border (Achaemenid Castle Wall Crenellation Silhouette) -->
+  <rect x="22" y="22" width="468" height="468" rx="95" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-opacity="0.3"/>
+</svg>

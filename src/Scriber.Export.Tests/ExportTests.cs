@@ -285,4 +285,89 @@ public class ExportTests
         Assert.Contains("Bob", csv);
         Assert.Contains("\"Hello world, welcome.\"", csv);
     }
+
+    [Fact]
+    public async Task DocxExporter_ExportsValidDocx_WithOpenXmlValidationAndRtl()
+    {
+        var enTranscript = CreateFixtureTranscript();
+        var exporter = new DocxExporter();
+
+        using var ms = new MemoryStream();
+        await exporter.ExportAsync(enTranscript, ms);
+        byte[] docxBytes = ms.ToArray();
+
+        Assert.NotEmpty(docxBytes);
+        Assert.True(docxBytes.Length > 500, "Docx file should have valid ZIP/OOXML structure");
+
+        // Inspect using OpenXML SDK
+        using (var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(new MemoryStream(docxBytes), false))
+        {
+            Assert.NotNull(wordDoc.MainDocumentPart);
+            var bodyText = wordDoc.MainDocumentPart.Document.Body?.InnerText ?? string.Empty;
+            Assert.Contains("Podcasting Interview", bodyText);
+            Assert.Contains("Alice", bodyText);
+            Assert.Contains("Hello world, welcome.", bodyText);
+        }
+
+        // Test Persian RTL Transcript
+        var faTranscript = new Transcript(
+            id: Guid.NewGuid(),
+            title: "جلسه هوش مصنوعی",
+            createdAt: DateTimeOffset.UtcNow,
+            languageCode: "fa",
+            speakers: [new Speaker("spk-0", "علی", "#4F46E5")],
+            segments: [new Segment("spk-0", TimeSpan.Zero, TimeSpan.FromSeconds(2), [new Word("سلام", TimeSpan.Zero, TimeSpan.FromSeconds(1), 0.95), new Word("دنیا", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), 0.90)])],
+            audio: new AudioReference("test.wav", TimeSpan.FromSeconds(2), 16000));
+
+        using var faMs = new MemoryStream();
+        await exporter.ExportAsync(faTranscript, faMs);
+        byte[] faBytes = faMs.ToArray();
+
+        using (var faDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(new MemoryStream(faBytes), false))
+        {
+            var body = faDoc.MainDocumentPart?.Document.Body;
+            Assert.NotNull(body);
+            var bidiElems = body.Descendants<DocumentFormat.OpenXml.Wordprocessing.BiDi>();
+            Assert.NotEmpty(bidiElems);
+        }
+    }
+
+    [Fact]
+    public async Task PdfExporter_ExportsValidPdf_ForEnglishAndPersian()
+    {
+        var enTranscript = CreateFixtureTranscript();
+        var exporter = new PdfExporter();
+
+        using var ms = new MemoryStream();
+        await exporter.ExportAsync(enTranscript, ms);
+        byte[] pdfBytes = ms.ToArray();
+
+        Assert.NotEmpty(pdfBytes);
+        string header = System.Text.Encoding.ASCII.GetString(pdfBytes[..5]);
+        Assert.Equal("%PDF-", header);
+
+        // Base64 export overload test
+        string base64 = exporter.Export(enTranscript);
+        Assert.False(string.IsNullOrWhiteSpace(base64));
+
+        // Test Persian RTL PDF export
+        var faTranscript = new Transcript(
+            id: Guid.NewGuid(),
+            title: "جلسه بررسی فنی",
+            createdAt: DateTimeOffset.UtcNow,
+            languageCode: "fa",
+            speakers: [new Speaker("spk-0", "سارا", "#4F46E5")],
+            segments: [new Segment("spk-0", TimeSpan.Zero, TimeSpan.FromSeconds(3), [
+                new Word("مذاکرات", TimeSpan.Zero, TimeSpan.FromSeconds(1), 0.95),
+                new Word("تخصصی", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), 0.60), // low confidence
+                new Word("انجام", TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3), 0.92)
+            ])],
+            audio: new AudioReference("fa.wav", TimeSpan.FromSeconds(3), 16000));
+
+        using var faMs = new MemoryStream();
+        await exporter.ExportAsync(faTranscript, faMs);
+        byte[] faPdfBytes = faMs.ToArray();
+        Assert.NotEmpty(faPdfBytes);
+        Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(faPdfBytes[..5]));
+    }
 }

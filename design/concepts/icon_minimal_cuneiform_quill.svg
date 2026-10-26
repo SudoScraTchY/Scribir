@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Solid Background -->
+  <rect width="512" height="512" rx="115" fill="#0A0F1D"/>
+
+  <!-- Minimalist Cuneiform-Wedge Quill Nib -->
+  <g transform="translate(256, 256)">
+    
+    <!-- Top Horizontal Cuneiform Wedge (Head of Nib) -->
+    <polygon points="-110,-120 110,-120 0,-70" fill="#FFF2B2"/>
+
+    <!-- Left Flank Wedge (Angled Downward) -->
+    <polygon points="-120,-80 -25,90 -65,10" fill="#F3C644"/>
+
+    <!-- Right Flank Wedge (Angled Downward) -->
+    <polygon points="120,-80 25,90 65,10" fill="#D4AF37"/>
+
+    <!-- Master Downward Chisel Wedge (The Nib Tip) -->
+    <polygon points="-45,70 45,70 0,165" fill="#F3C644"/>
+
+    <!-- Negative Space Soundwave Core -->
+    <circle cx="0" cy="-25" r="24" fill="#0A0F1D"/>
+    <circle cx="0" cy="-25" r="10" fill="#4EECD6"/>
+
+    <!-- Soundwave Slit Lines in Negative Space -->
+    <rect x="-6" y="-5" width="12" height="75" rx="6" fill="#0A0F1D"/>
+
+    <!-- Chunky Equalizer Transverse Bars -->
+    <rect x="-40" y="5" width="80" height="14" rx="7" fill="#4EECD6"/>
+    <rect x="-60" y="32" width="120" height="18" rx="9" fill="#FFFFFF"/>
+
+    <!-- Writing Point Spark -->
+    <circle cx="0" cy="165" r="12" fill="#FFFFFF"/>
+  </g>
+</svg>

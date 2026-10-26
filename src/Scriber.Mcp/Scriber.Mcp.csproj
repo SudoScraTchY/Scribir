@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Scriber.Core\Scriber.Core.csproj" />
     <ProjectReference Include="..\Scriber.Storage\Scriber.Storage.csproj" />
     <ProjectReference Include="..\Scriber.Export\Scriber.Export.csproj" />
+    <ProjectReference Include="..\Scriber.Providers\Scriber.Providers.csproj" />
   </ItemGroup>
 
 </Project>

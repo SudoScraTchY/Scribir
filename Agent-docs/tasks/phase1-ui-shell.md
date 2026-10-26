@@ -88,7 +88,8 @@ persisted inline edits surviving an app restart.
 
 ### PH1-UI-004 — Waveform rendering via SkiaSharp
 
-**Status:** Not Started
+**Status:** Done
+**Completed:** 2026-10-26
 **Depends On:** PH1-UI-003
 **Related ADR(s):** ADR-0002
 
@@ -96,7 +97,7 @@ persisted inline edits surviving an app restart.
 ADR-0002's decision to avoid stacking/animating many individual native
 controls.
 
-**Scope:** `Scriber.App`, a dedicated `SKCanvasView`-based control.
+**Scope:** `Scriber.App`, a dedicated `SKCanvasView`-based control (`SkiaWaveformScrubber`).
 
 **Acceptance Criteria:**
 - Redraws only the currently visible time window per frame, not the
@@ -113,6 +114,11 @@ separate, later feature — this task is the single-track scrubber only).
 
 **Suggested Verification:** Manual performance check on the named
 low/mid-range Android device, not only on desktop or a high-end phone.
+
+**Completion note (2026-10-26):** Done. Built `SkiaWaveformScrubber` using `SkiaSharp.Views.Maui.Controls`.
+Renders downsampled amplitude peaks, windowed playhead tracking, linear pan drag math, and syncs bidirectionally
+with `TranscriptViewModel.CurrentPositionSeconds`. Replaced basic `<Slider>` in `TranscriptPage.xaml`. Verified
+on Windows Desktop and Android.
 
 ---
 
@@ -144,7 +150,7 @@ across all occurrences and survives an app restart.
 
 ### PH1-UI-006 — RTL layout pass
 
-**Status:** Not Started
+**Status:** In Progress (Code Complete, Awaiting Native QA)
 **Depends On:** PH1-UI-003
 **Related ADR(s):** ADR-0002
 
@@ -173,6 +179,10 @@ separately in `PH1-EXPORT-003`'s acceptance criteria).
 
 **Suggested Verification:** Native-speaker manual review, explicitly
 required, not optional.
+
+**Implementation note (2026-10-26):** Code implemented. Added `LayoutDirection` (`FlowDirection.RightToLeft` vs `FlowDirection.LeftToRight`)
+and RTL language detection to `TranscriptViewModel`, wired `FlowDirection="{Binding LayoutDirection}"` in
+`TranscriptPage.xaml`. Retains `In Progress` pending native Persian speaker QA review.
 
 ---
 

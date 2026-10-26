@@ -19,7 +19,11 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
     private readonly IDiarizer _diarizer;
     private readonly TranscriptionPipelineOptions _options;
     private readonly List<LiveSegmentUpdate> _segments = new();
-    private readonly List<float> _audioBuffer = new();
+    private readonly object _bufferLock = new();
+    private readonly SemaphoreSlim _processLock = new(1, 1);
+
+    private float[] _rentedBuffer;
+    private int _bufferedCount;
 
     private bool _isPaused;
     private bool _disposed;
@@ -28,7 +32,16 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
     private int _speakerTurnCounter = 0;
 
     public event EventHandler<LiveSegmentUpdate>? SegmentUpdated;
-    public IReadOnlyList<LiveSegmentUpdate> Segments => _segments;
+    public IReadOnlyList<LiveSegmentUpdate> Segments
+    {
+        get
+        {
+            lock (_segments)
+            {
+                return _segments.ToList();
+            }
+        }
+    }
     public bool IsPaused => _isPaused;
 
     public LiveTranscriptionSession(
@@ -39,6 +52,8 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
         _asr = asr ?? throw new ArgumentNullException(nameof(asr));
         _diarizer = diarizer ?? throw new ArgumentNullException(nameof(diarizer));
         _options = options ?? new TranscriptionPipelineOptions();
+        _rentedBuffer = ArrayPool<float>.Shared.Rent(64000);
+        _bufferedCount = 0;
     }
 
     public async ValueTask PushAudioAsync(ReadOnlyMemory<float> samples, TimeSpan timestamp, CancellationToken ct = default)
@@ -48,19 +63,32 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
 
         ct.ThrowIfCancellationRequested();
 
-        // Append samples to rolling audio buffer
-        var span = samples.Span;
-        for (int i = 0; i < span.Length; i++)
+        bool shouldTrigger;
+        lock (_bufferLock)
         {
-            _audioBuffer.Add(span[i]);
+            // Ensure buffer capacity with zero-alloc pooled array expansion if needed
+            int neededCapacity = _bufferedCount + samples.Length;
+            if (neededCapacity > _rentedBuffer.Length)
+            {
+                int newCapacity = Math.Max(_rentedBuffer.Length * 2, neededCapacity);
+                float[] newBuffer = ArrayPool<float>.Shared.Rent(newCapacity);
+                _rentedBuffer.AsSpan(0, _bufferedCount).CopyTo(newBuffer);
+                ArrayPool<float>.Shared.Return(_rentedBuffer);
+                _rentedBuffer = newBuffer;
+            }
+
+            // Zero-alloc direct span copy into rented buffer
+            samples.Span.CopyTo(_rentedBuffer.AsSpan(_bufferedCount));
+            _bufferedCount += samples.Length;
+            _currentSessionTime = timestamp;
+
+            shouldTrigger = _bufferedCount >= ChunkWindowSamples;
         }
 
-        _currentSessionTime = timestamp;
-
-        // When we have accumulated enough audio (or at least 2.0s), trigger interim processing
-        if (_audioBuffer.Count >= ChunkWindowSamples)
+        // When we have accumulated enough audio (at least 2.0s), trigger processing
+        if (shouldTrigger)
         {
-            await ProcessWindowAsync(isFinal: false, ct).ConfigureAwait(false);
+            await ProcessPendingAudioAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -74,20 +102,60 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
         _isPaused = false;
     }
 
-    private async Task ProcessWindowAsync(bool isFinal, CancellationToken ct)
+    private async Task ProcessPendingAudioAsync(CancellationToken ct)
     {
-        if (_audioBuffer.Count < 8000 && !isFinal) // Less than 0.5s
+        // Try acquiring process lock without blocking PushAudioAsync callers
+        if (!await _processLock.WaitAsync(0, ct).ConfigureAwait(false))
         {
+            // Another processing loop is active; it will process newly buffered audio in its loop
             return;
         }
 
-        float[] samplesToProcess = _audioBuffer.ToArray();
+        try
+        {
+            while (true)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                float[] samplesToProcess;
+                int sampleCount;
+                lock (_bufferLock)
+                {
+                    if (_disposed || _bufferedCount < ChunkWindowSamples)
+                    {
+                        break;
+                    }
+
+                    sampleCount = ChunkWindowSamples;
+                    samplesToProcess = new float[sampleCount];
+                    _rentedBuffer.AsSpan(0, sampleCount).CopyTo(samplesToProcess);
+
+                    // Shift remaining unprocessed samples to beginning of buffer
+                    int remaining = _bufferedCount - sampleCount;
+                    if (remaining > 0)
+                    {
+                        _rentedBuffer.AsSpan(sampleCount, remaining).CopyTo(_rentedBuffer.AsSpan(0));
+                    }
+                    _bufferedCount = remaining;
+                }
+
+                await RunWindowInferenceAsync(samplesToProcess, sampleCount, isFinal: false, ct).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _processLock.Release();
+        }
+    }
+
+    private async Task RunWindowInferenceAsync(float[] samples, int sampleCount, bool isFinal, CancellationToken ct)
+    {
         var windowStart = _lastWindowEnd;
-        var windowEnd = windowStart + TimeSpan.FromSeconds(samplesToProcess.Length / (double)SampleRate);
+        var windowEnd = windowStart + TimeSpan.FromSeconds(sampleCount / (double)SampleRate);
 
         try
         {
-            var audioBuffer = new AudioBuffer(samplesToProcess, SampleRate, 1);
+            var audioBuffer = new AudioBuffer(samples, SampleRate, 1);
             var asrOptions = _options.AsrOptions with { LanguageCode = _options.LanguageCode };
 
             // Run ASR
@@ -110,19 +178,22 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
                             segEnd,
                             isFinal);
 
-                        _segments.Add(update);
+                        lock (_segments)
+                        {
+                            _segments.Add(update);
+                        }
                         SegmentUpdated?.Invoke(this, update);
                     }
                 }
             }
 
             _lastWindowEnd = windowEnd;
-            _audioBuffer.Clear();
             _speakerTurnCounter++;
         }
         catch (Exception)
         {
-            // Keep buffer intact on transient errors
+            // Keep window tracking continuous even on transient errors
+            _lastWindowEnd = windowEnd;
         }
     }
 
@@ -130,48 +201,81 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Process remaining buffer as final
-        if (_audioBuffer.Count > 0)
+        // Wait for any in-flight window processing to finish
+        await _processLock.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            await ProcessWindowAsync(isFinal: true, ct).ConfigureAwait(false);
+            // Process remaining buffer as final if sufficient audio exists
+            float[]? remainingSamples = null;
+            int remainingCount = 0;
+
+            lock (_bufferLock)
+            {
+                if (_bufferedCount >= 8000) // At least 0.5s of audio
+                {
+                    remainingCount = _bufferedCount;
+                    remainingSamples = new float[remainingCount];
+                    _rentedBuffer.AsSpan(0, remainingCount).CopyTo(remainingSamples);
+                    _bufferedCount = 0;
+                }
+                else
+                {
+                    _bufferedCount = 0;
+                }
+            }
+
+            if (remainingSamples != null)
+            {
+                await RunWindowInferenceAsync(remainingSamples, remainingCount, isFinal: true, ct).ConfigureAwait(false);
+            }
+
+            List<LiveSegmentUpdate> segmentsCopy;
+            lock (_segments)
+            {
+                segmentsCopy = _segments.ToList();
+            }
+
+            // Build domain segments
+            var domainSegments = new List<Segment>(segmentsCopy.Count);
+            var speakerIds = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var seg in segmentsCopy)
+            {
+                speakerIds.Add(seg.SpeakerId);
+                var words = SynthesizeWords(seg.Text, seg.Start, seg.End);
+                domainSegments.Add(new Segment(seg.SpeakerId, seg.Start, seg.End, words));
+            }
+
+            var speakers = speakerIds.Select((id, idx) =>
+                new Speaker(id, $"Speaker {idx + 1}", "#4F46E5")).ToList();
+
+            if (speakers.Count == 0)
+            {
+                speakers.Add(new Speaker("speaker-0", "Speaker 1", "#4F46E5"));
+            }
+
+            string sessionTitle = !string.IsNullOrWhiteSpace(title)
+                ? title
+                : $"Live Recording ({DateTime.Now:MMM dd, HH:mm})";
+
+            var audioRef = new AudioReference(
+                localPath: sourcePath,
+                duration: _currentSessionTime > TimeSpan.Zero ? _currentSessionTime : _lastWindowEnd,
+                sampleRate: SampleRate);
+
+            return new Transcript(
+                id: Guid.NewGuid(),
+                title: sessionTitle,
+                createdAt: DateTimeOffset.UtcNow,
+                languageCode: _options.LanguageCode,
+                speakers: speakers,
+                segments: domainSegments,
+                audio: audioRef);
         }
-
-        // Build domain segments
-        var domainSegments = new List<Segment>(_segments.Count);
-        var speakerIds = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var seg in _segments)
+        finally
         {
-            speakerIds.Add(seg.SpeakerId);
-            var words = SynthesizeWords(seg.Text, seg.Start, seg.End);
-            domainSegments.Add(new Segment(seg.SpeakerId, seg.Start, seg.End, words));
+            _processLock.Release();
         }
-
-        var speakers = speakerIds.Select((id, idx) =>
-            new Speaker(id, $"Speaker {idx + 1}", "#4F46E5")).ToList();
-
-        if (speakers.Count == 0)
-        {
-            speakers.Add(new Speaker("speaker-0", "Speaker 1", "#4F46E5"));
-        }
-
-        string sessionTitle = !string.IsNullOrWhiteSpace(title)
-            ? title
-            : $"Live Recording ({DateTime.Now:MMM dd, HH:mm})";
-
-        var audioRef = new AudioReference(
-            localPath: sourcePath,
-            duration: _currentSessionTime > TimeSpan.Zero ? _currentSessionTime : _lastWindowEnd,
-            sampleRate: SampleRate);
-
-        return new Transcript(
-            id: Guid.NewGuid(),
-            title: sessionTitle,
-            createdAt: DateTimeOffset.UtcNow,
-            languageCode: _options.LanguageCode,
-            speakers: speakers,
-            segments: domainSegments,
-            audio: audioRef);
     }
 
     private static IReadOnlyList<Word> SynthesizeWords(string text, TimeSpan start, TimeSpan end)
@@ -200,8 +304,17 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
     {
         if (!_disposed)
         {
-            _audioBuffer.Clear();
             _disposed = true;
+            lock (_bufferLock)
+            {
+                var buf = Interlocked.Exchange(ref _rentedBuffer, null!);
+                if (buf != null)
+                {
+                    ArrayPool<float>.Shared.Return(buf);
+                }
+                _bufferedCount = 0;
+            }
+            _processLock.Dispose();
         }
 
         return ValueTask.CompletedTask;

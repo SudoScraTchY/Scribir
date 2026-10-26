@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgQuill" cx="50%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#1E1E2E"/>
+      <stop offset="55%" stop-color="#0F111A"/>
+      <stop offset="100%" stop-color="#06070B"/>
+    </radialGradient>
+
+    <!-- Metallic Titanium Gradient for Quill Body -->
+    <linearGradient id="nibMetallic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="35%" stop-color="#94A3B8"/>
+      <stop offset="70%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+
+    <!-- Sonic Violet / Electric Cyan Gradient for Slit & Waves -->
+    <linearGradient id="sonicWave" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Drop Glow Filter -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Squircle Canvas -->
+  <rect width="512" height="512" rx="115" fill="url(#bgQuill)"/>
+
+  <!-- Subtle Concentric Sound Wave Radiations from Nib Tip -->
+  <circle cx="256" cy="380" r="160" fill="none" stroke="#818CF8" stroke-width="1.5" stroke-opacity="0.12" stroke-dasharray="6 8"/>
+  <circle cx="256" cy="380" r="120" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-opacity="0.2"/>
+  <circle cx="256" cy="380" r="80" fill="none" stroke="#C084FC" stroke-width="1.5" stroke-opacity="0.3"/>
+
+  <!-- Modern Aerodynamic Quill / Pen Nib -->
+  <g transform="translate(0, -20)">
+    <!-- Nib Outer Wings (Left & Right) -->
+    <!-- Left Wing -->
+    <path d="M256,100 C210,140 160,200 160,280 C160,330 210,380 252,400 L252,220 C252,205 240,195 240,180 C240,165 252,155 252,140 Z" 
+          fill="url(#nibMetallic)"/>
+    
+    <!-- Right Wing -->
+    <path d="M256,100 C302,140 352,200 352,280 C352,330 302,380 260,400 L260,220 C260,205 272,195 272,180 C272,165 260,155 260,140 Z" 
+          fill="url(#nibMetallic)"/>
+
+    <!-- Subtle Bevel Highlight on Left Blade -->
+    <path d="M256,100 C220,135 175,190 170,270 L252,240 Z" fill="#FFFFFF" opacity="0.15"/>
+
+    <!-- Breather Ring (Microphone Diaphragm Core) -->
+    <circle cx="256" cy="200" r="16" fill="#0F111A" stroke="url(#goldAccent)" stroke-width="3"/>
+    <circle cx="256" cy="200" r="7" fill="url(#sonicWave)" filter="url(#neonGlow)"/>
+
+    <!-- The Sonic Slit: Transforming into an Equalizer Soundwave -->
+    <g filter="url(#neonGlow)">
+      <!-- Central Slit Line -->
+      <line x1="256" y1="216" x2="256" y2="400" stroke="url(#sonicWave)" stroke-width="5" stroke-linecap="round"/>
+      
+      <!-- Audio Waveform Ribs emanating from the Nib Slit -->
+      <line x1="225" y1="260" x2="287" y2="260" stroke="url(#sonicWave)" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="210" y1="285" x2="302" y2="285" stroke="url(#sonicWave)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="200" y1="310" x2="312" y2="310" stroke="#38BDF8" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="215" y1="335" x2="297" y2="335" stroke="url(#sonicWave)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="235" y1="360" x2="277" y2="360" stroke="url(#sonicWave)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="248" y1="380" x2="264" y2="380" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Nib Contact Spark / Point of Writing -->
+      <circle cx="256" cy="402" r="6" fill="#FFFFFF" filter="url(#neonGlow)"/>
+    </g>
+
+    <!-- Transcribed Acoustic Wave Trail beneath the tip -->
+    <path d="M170,430 Q213,415 256,430 T342,430" fill="none" stroke="url(#sonicWave)" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M195,445 Q225,435 256,445 T317,445" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- Clean Precision Outer Rim -->
+  <rect x="22" y="22" width="468" height="468" rx="95" fill="none" stroke="#818CF8" stroke-width="1.5" stroke-opacity="0.3"/>
+</svg>

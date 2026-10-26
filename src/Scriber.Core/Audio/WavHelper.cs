@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Buffers.Binary;
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace Scriber.Core.Audio;
@@ -123,7 +124,7 @@ public static class WavHelper
     /// <summary>
     /// Computes the normalized RMS (Root Mean Square) audio amplitude (0.0 to 1.0) from a 16-bit PCM byte span.
     /// Memory efficient: operates purely on the stack/span without heap allocations.
-    /// Optimized for high-frequency real-time audio visualization using direct memory reinterpretation.
+    /// Optimized for high-frequency real-time audio visualization using direct memory reinterpretation and SIMD acceleration.
     /// </summary>
     public static float CalculateRmsLevel(ReadOnlySpan<byte> pcm16Bytes)
     {
@@ -134,8 +135,53 @@ public static class WavHelper
 
         if (BitConverter.IsLittleEndian)
         {
-            ReadOnlySpan<short> samples = MemoryMarshal.Cast<byte, short>(pcm16Bytes);
-            for (int i = 0; i < samples.Length; i++)
+            ReadOnlySpan<short> samples = MemoryMarshal.Cast<byte, short>(pcm16Bytes.Slice(0, sampleCount * 2));
+            int i = 0;
+
+            if (Vector256.IsHardwareAccelerated && samples.Length >= 8)
+            {
+                var accLo = Vector256<long>.Zero;
+                var accHi = Vector256<long>.Zero;
+                int simdLimit = samples.Length - (samples.Length % 8);
+
+                for (; i < simdLimit; i += 8)
+                {
+                    Vector128<short> v8 = Vector128.LoadUnsafe(ref MemoryMarshal.GetReference(samples), (nuint)i);
+                    (Vector128<int> loInt, Vector128<int> hiInt) = Vector128.Widen(v8);
+                    Vector256<int> vInt8 = Vector256.Create(loInt, hiInt);
+                    (Vector256<long> loLong, Vector256<long> hiLong) = Vector256.Widen(vInt8);
+
+                    accLo += loLong * loLong;
+                    accHi += hiLong * hiLong;
+                }
+
+                sumSquares += Vector256.Sum(accLo) + Vector256.Sum(accHi);
+            }
+            else if (Vector128.IsHardwareAccelerated && samples.Length >= 8)
+            {
+                var acc0 = Vector128<long>.Zero;
+                var acc1 = Vector128<long>.Zero;
+                var acc2 = Vector128<long>.Zero;
+                var acc3 = Vector128<long>.Zero;
+                int simdLimit = samples.Length - (samples.Length % 8);
+
+                for (; i < simdLimit; i += 8)
+                {
+                    Vector128<short> v8 = Vector128.LoadUnsafe(ref MemoryMarshal.GetReference(samples), (nuint)i);
+                    (Vector128<int> loInt, Vector128<int> hiInt) = Vector128.Widen(v8);
+                    (Vector128<long> l0, Vector128<long> l1) = Vector128.Widen(loInt);
+                    (Vector128<long> h0, Vector128<long> h1) = Vector128.Widen(hiInt);
+
+                    acc0 += l0 * l0;
+                    acc1 += l1 * l1;
+                    acc2 += h0 * h0;
+                    acc3 += h1 * h1;
+                }
+
+                sumSquares += Vector128.Sum(acc0) + Vector128.Sum(acc1) + Vector128.Sum(acc2) + Vector128.Sum(acc3);
+            }
+
+            for (; i < samples.Length; i++)
             {
                 int s = samples[i];
                 sumSquares += (long)s * s;
@@ -171,7 +217,80 @@ public static class WavHelper
     }
 
     /// <summary>
+    /// Converts a span of little-endian 16-bit PCM bytes into normalized float32 samples [-1.0, 1.0],
+    /// writing the results into the provided destination span.
+    /// Accelerated with SIMD vectorization (Vector256 / Vector128) with zero heap allocations.
+    /// </summary>
+    public static void Pcm16ToFloat(ReadOnlySpan<byte> pcm16Bytes, Span<float> destination)
+    {
+        int sampleCount = pcm16Bytes.Length / 2;
+        if (sampleCount == 0) return;
+
+        if (destination.Length < sampleCount)
+        {
+            throw new ArgumentException("Destination span is smaller than sample count.", nameof(destination));
+        }
+
+        const float scale = 1.0f / 32768.0f;
+        int i = 0;
+
+        if (BitConverter.IsLittleEndian)
+        {
+            ReadOnlySpan<short> samples = MemoryMarshal.Cast<byte, short>(pcm16Bytes.Slice(0, sampleCount * 2));
+
+            if (Vector256.IsHardwareAccelerated && samples.Length >= 16)
+            {
+                var vScale = Vector256.Create(scale);
+                int simdLimit = samples.Length - (samples.Length % 16);
+
+                for (; i < simdLimit; i += 16)
+                {
+                    Vector256<short> vShorts = Vector256.LoadUnsafe(ref MemoryMarshal.GetReference(samples), (nuint)i);
+                    (Vector256<int> lo, Vector256<int> hi) = Vector256.Widen(vShorts);
+
+                    Vector256<float> flo = Vector256.ConvertToSingle(lo) * vScale;
+                    Vector256<float> fhi = Vector256.ConvertToSingle(hi) * vScale;
+
+                    flo.StoreUnsafe(ref MemoryMarshal.GetReference(destination), (nuint)i);
+                    fhi.StoreUnsafe(ref MemoryMarshal.GetReference(destination), (nuint)(i + 8));
+                }
+            }
+            else if (Vector128.IsHardwareAccelerated && samples.Length >= 8)
+            {
+                var vScale = Vector128.Create(scale);
+                int simdLimit = samples.Length - (samples.Length % 8);
+
+                for (; i < simdLimit; i += 8)
+                {
+                    Vector128<short> vShorts = Vector128.LoadUnsafe(ref MemoryMarshal.GetReference(samples), (nuint)i);
+                    (Vector128<int> lo, Vector128<int> hi) = Vector128.Widen(vShorts);
+
+                    Vector128<float> flo = Vector128.ConvertToSingle(lo) * vScale;
+                    Vector128<float> fhi = Vector128.ConvertToSingle(hi) * vScale;
+
+                    flo.StoreUnsafe(ref MemoryMarshal.GetReference(destination), (nuint)i);
+                    fhi.StoreUnsafe(ref MemoryMarshal.GetReference(destination), (nuint)(i + 4));
+                }
+            }
+
+            for (; i < samples.Length; i++)
+            {
+                destination[i] = samples[i] * scale;
+            }
+        }
+        else
+        {
+            for (; i < sampleCount; i++)
+            {
+                short pcm = BinaryPrimitives.ReadInt16LittleEndian(pcm16Bytes.Slice(i * 2, 2));
+                destination[i] = pcm * scale;
+            }
+        }
+    }
+
+    /// <summary>
     /// Converts a span of little-endian 16-bit PCM bytes into normalized float32 samples [-1.0, 1.0].
+    /// Accelerated with SIMD vectorization.
     /// </summary>
     public static float[] Pcm16ToFloat(ReadOnlySpan<byte> pcm16Bytes)
     {
@@ -179,13 +298,7 @@ public static class WavHelper
 
         int sampleCount = pcm16Bytes.Length / 2;
         var samples = new float[sampleCount];
-
-        for (int i = 0; i < sampleCount; i++)
-        {
-            short pcm = BinaryPrimitives.ReadInt16LittleEndian(pcm16Bytes.Slice(i * 2, 2));
-            samples[i] = pcm / 32768.0f;
-        }
-
+        Pcm16ToFloat(pcm16Bytes, samples);
         return samples;
     }
 
@@ -258,11 +371,7 @@ public static class WavHelper
                         {
                             if (channels == 1)
                             {
-                                for (int i = 0; i < actualFrames; i++)
-                                {
-                                    short pcm = BinaryPrimitives.ReadInt16LittleEndian(rawBytes.AsSpan(i * 2, 2));
-                                    rawSamples[framesRead + i] = pcm / 32768.0f;
-                                }
+                                Pcm16ToFloat(rawBytes.AsSpan(0, actualFrames * 2), rawSamples.AsSpan(framesRead, actualFrames));
                             }
                             else // Stereo 16-bit
                             {

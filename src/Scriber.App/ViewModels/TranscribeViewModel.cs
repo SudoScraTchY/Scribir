@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using Scriber.App.Services;
 using Scriber.App.Services.Audio;
@@ -627,11 +628,25 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
             else
             {
                 StatusMessage = "Recording produced no audio file.";
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    if (Shell.Current != null)
+                    {
+                        await Shell.Current.DisplayAlertAsync("Recording Notice", "No audio file was produced. Please check your microphone permissions and try speaking for a few seconds.", "OK");
+                    }
+                });
             }
         }
         catch (Exception ex)
         {
             StatusMessage = $"Stop recording error: {ex.Message}";
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (Shell.Current != null)
+                {
+                    await Shell.Current.DisplayAlertAsync("Recording Error", ex.Message, "OK");
+                }
+            });
         }
     }
 
@@ -699,6 +714,13 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
         if (!HasDownloadedModels || SelectedModel == null)
         {
             StatusMessage = "Please download a speech model from the Models tab first.";
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (Shell.Current != null)
+                {
+                    await Shell.Current.DisplayAlertAsync("No Model Ready", "Please download a speech recognition model from the Models tab before transcribing.", "OK");
+                }
+            });
             return;
         }
 
@@ -757,13 +779,34 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
 
             StatusMessage = "Transcript generated and saved successfully!";
 
-            // Navigate to transcript view
-            await Shell.Current.GoToAsync($"transcript?id={transcript.Id}");
+            // Ensure navigation is executed on the main UI thread
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                try
+                {
+                    if (Shell.Current != null)
+                    {
+                        await Shell.Current.GoToAsync($"transcript?id={transcript.Id}");
+                    }
+                }
+                catch (Exception navEx)
+                {
+                    Debug.WriteLine($"Navigation failed: {navEx.Message}");
+                }
+            });
         }
         catch (Exception ex)
         {
             StatusMessage = $"Transcription error: {ex.Message}";
             ProgressStage = "Failed";
+
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (Shell.Current != null)
+                {
+                    await Shell.Current.DisplayAlertAsync("Transcription Failed", ex.Message, "OK");
+                }
+            });
         }
         finally
         {

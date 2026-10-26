@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <!-- Deep Lapis Stone Radial Background -->
+    <radialGradient id="bgLapisDeep" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#14264A"/>
+      <stop offset="45%" stop-color="#0B172E"/>
+      <stop offset="100%" stop-color="#040913"/>
+    </radialGradient>
+
+    <!-- Imperial Gold Gradient -->
+    <linearGradient id="splashGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="35%" stop-color="#F3C644"/>
+      <stop offset="70%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#9A7B1C"/>
+    </linearGradient>
+
+    <linearGradient id="turquoiseLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0E8388" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#4EECD6" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0E8388" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Golden Glow Filter -->
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="intenseGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="25" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Deep Lapis Lazuli Stone Tablet Canvas -->
+  <rect width="1080" height="1920" fill="url(#bgLapisDeep)"/>
+
+  <!-- Ancient Persepolis Architectural Stepped Frame -->
+  <rect x="50" y="50" width="980" height="1820" rx="30" fill="none" stroke="url(#splashGold)" stroke-width="1.5" stroke-opacity="0.25"/>
+  <rect x="70" y="70" width="940" height="1780" rx="20" fill="none" stroke="url(#splashGold)" stroke-width="0.8" stroke-opacity="0.15" stroke-dasharray="10 15"/>
+
+  <!-- Top Imperial Seal Medallion (Subtle) -->
+  <g transform="translate(540, 240)">
+    <circle cx="0" cy="0" r="45" fill="none" stroke="url(#splashGold)" stroke-width="1.2" stroke-opacity="0.35"/>
+    <circle cx="0" cy="0" r="38" fill="none" stroke="#4EECD6" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="4 6"/>
+    <!-- Small 8-petal Lotus Core -->
+    <circle cx="0" cy="0" r="10" fill="url(#splashGold)" opacity="0.7"/>
+  </g>
+
+  <!-- Central Visual: The Cuneiform Soundwave Inscription Basin -->
+  <g transform="translate(540, 820)">
+    <!-- Concentric Acoustic Resonator Rings (Carved in Stone) -->
+    <circle cx="0" cy="0" r="320" fill="none" stroke="url(#splashGold)" stroke-width="1" stroke-opacity="0.1"/>
+    <circle cx="0" cy="0" r="260" fill="none" stroke="url(#splashGold)" stroke-width="1.5" stroke-opacity="0.2" stroke-dasharray="8 12"/>
+    <circle cx="0" cy="0" r="200" fill="none" stroke="#0E8388" stroke-width="1.5" stroke-opacity="0.35"/>
+    <circle cx="0" cy="0" r="140" fill="none" stroke="url(#splashGold)" stroke-width="2" stroke-opacity="0.5"/>
+
+    <!-- Central S-Waveform Chiseled in Cuneiform Wedges -->
+    <g filter="url(#glowGold)">
+      <!-- Master Horizontal Wedge (The Spoken Word) -->
+      <polygon points="-160,0 -80,-35 -80,35" fill="url(#splashGold)"/>
+      <rect x="-80" y="-8" width="220" height="16" rx="4" fill="url(#splashGold)"/>
+      <polygon points="140,-8 180,0 140,8" fill="url(#splashGold)"/>
+
+      <!-- Upper Cuneiform Arch Bars (Acoustic Equalizer Attack) -->
+      <polygon points="-80,-120 -50,-140 -50,-100" fill="url(#splashGold)"/>
+      <path d="M-50,-125 L40,-125 L60,-110 L-50,-110 Z" fill="url(#splashGold)"/>
+      <polygon points="50,-140 70,-120 70,-160" fill="url(#splashGold)"/>
+
+      <!-- Lower Cuneiform Arch Bars (Acoustic Equalizer Decay) -->
+      <polygon points="80,120 50,140 50,100" fill="url(#splashGold)"/>
+      <path d="M50,125 L-40,125 L-60,110 L50,110 Z" fill="url(#splashGold)"/>
+      <polygon points="-50,140 -70,120 -70,160" fill="url(#splashGold)"/>
+
+      <!-- Vertical Chisel Wedges (Waveform Equalizer Ticks) -->
+      <polygon points="-30,-50 -20,-50 -25,-15" fill="#FFF2B2"/>
+      <polygon points="0,-75 10,-75 5,-15" fill="#4EECD6"/>
+      <polygon points="30,-55 40,-55 35,-15" fill="#FFF2B2"/>
+      <polygon points="60,-35 70,-35 65,-15" fill="#FFF2B2"/>
+
+      <polygon points="-30,50 -20,50 -25,15" fill="#FFF2B2"/>
+      <polygon points="0,75 10,75 5,15" fill="#4EECD6"/>
+      <polygon points="30,55 40,55 35,15" fill="#FFF2B2"/>
+      <polygon points="60,35 70,35 65,15" fill="#FFF2B2"/>
+
+      <!-- Chisel Spark / Core Light -->
+      <circle cx="5" cy="0" r="10" fill="#FFFFFF" filter="url(#intenseGlow)"/>
+    </g>
+
+    <!-- Ancient Old Persian Word Separator Wedges (𐏐) -->
+    <polygon points="-240,0 -220,-20 -220,20" fill="url(#splashGold)" opacity="0.6"/>
+    <polygon points="240,0 220,-20 220,20" fill="url(#splashGold)" opacity="0.6"/>
+  </g>
+
+  <!-- Typography: App Brand Title & Subtitle -->
+  <!-- Main Title -->
+  <text x="540" y="1280" font-family="'Cinzel', 'Trajan Pro', 'Georgia', serif" font-size="52" font-weight="700" letter-spacing="16" fill="url(#splashGold)" text-anchor="middle" filter="url(#glowGold)">
+    SCRIBIR
+  </text>
+  
+  <!-- Subtitle / Tagline -->
+  <text x="540" y="1335" font-family="'Open Sans', 'Segoe UI', sans-serif" font-size="20" font-weight="400" letter-spacing="8" fill="#A5B8D8" text-anchor="middle">
+    SOVEREIGN ON-DEVICE SCRIBE
+  </text>
+
+  <!-- Loading State Indicator Area -->
+  <g transform="translate(540, 1500)">
+    <!-- Subtle Loading Track -->
+    <line x1="-220" y1="0" x2="220" y2="0" stroke="url(#splashGold)" stroke-width="2" stroke-opacity="0.2"/>
+    
+    <!-- Active Progress Bar Segment -->
+    <line x1="-120" y1="0" x2="80" y2="0" stroke="url(#turquoiseLine)" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Pulsing Stylus Point on Track -->
+    <circle cx="80" cy="0" r="5" fill="#FFFFFF" filter="url(#glowGold)"/>
+
+    <!-- Operational Telemetry Status Line -->
+    <text x="0" y="55" font-family="'JetBrains Mono', 'Consolas', monospace" font-size="16" letter-spacing="3" fill="#D4AF37" text-anchor="middle" opacity="0.9">
+      INITIALIZING ONNX RUNTIME • NEMOTRON V3
+    </text>
+
+    <!-- Sovereign Badge -->
+    <g transform="translate(0, 120)">
+      <rect x="-140" y="-18" width="280" height="36" rx="18" fill="#0B172E" stroke="url(#splashGold)" stroke-width="1" stroke-opacity="0.4"/>
+      <circle cx="-100" cy="0" r="4" fill="#4EECD6"/>
+      <text x="10" y="6" font-family="'Open Sans', sans-serif" font-size="13" font-weight="600" letter-spacing="2" fill="#E2E8F0" text-anchor="middle">
+        100% OFFLINE • AIR-GAPPED
+      </text>
+    </g>
+  </g>
+
+  <!-- Bottom Ancient Marker -->
+  <text x="540" y="1810" font-family="'Georgia', serif" font-size="14" letter-spacing="5" fill="#4A658E" text-anchor="middle">
+    ARCHIVES OF PASARGADAE
+  </text>
+</svg>
