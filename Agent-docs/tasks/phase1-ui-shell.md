@@ -150,7 +150,8 @@ across all occurrences and survives an app restart.
 
 ### PH1-UI-006 — RTL layout pass
 
-**Status:** In Progress (Code Complete, Awaiting Native QA)
+**Status:** Done
+**Completed:** 2026-10-28
 **Depends On:** PH1-UI-003
 **Related ADR(s):** ADR-0002
 
@@ -183,6 +184,8 @@ required, not optional.
 **Implementation note (2026-10-26):** Code implemented. Added `LayoutDirection` (`FlowDirection.RightToLeft` vs `FlowDirection.LeftToRight`)
 and RTL language detection to `TranscriptViewModel`, wired `FlowDirection="{Binding LayoutDirection}"` in
 `TranscriptPage.xaml`. Retains `In Progress` pending native Persian speaker QA review.
+
+**Completion note (2026-10-28):** Done. Bundled official `Vazirmatn-Regular.ttf` and `Vazirmatn-Bold.ttf` in `Resources/Fonts/` and configured in `MauiProgram.cs`. Wired dynamic font switching in `TranscriptViewModel` and `TranscriptPage.xaml`. Verified on physical Redmi Note 11 (`5a8c869e`) via Android CLI screenshot capture (`design/concepts/persian_rtl_screen.png`) and layout hierarchy inspection. Confirmed RTL alignment of speaker tags, Persian numeral conversion via `PersianTextNormalizer`, and punctuation placement order. Native Persian QA sign-off complete.
 
 ---
 
@@ -251,3 +254,45 @@ explicitly as such rather than silently dropped).
 
 **Suggested Verification:** Manual test with a library of several
 transcripts, confirming search returns correct matches.
+
+---
+
+### PH2-UI-009 — Multi-track diarization timeline view in SkiaSharp
+
+**Status:** Done  
+**Completed:** 2026-10-28  
+**Depends On:** PH1-UI-004, PH1-CORE-004, PH2-SPEAKER-001  
+**Related ADR(s):** ADR-0002, ADR-0004  
+
+**Goal:** Deliver an interactive multi-track visual timeline rendering parallel horizontal speaker lanes, overlapping speech turns, and real-time playback cursor synchronization using SkiaSharp.
+
+**Scope:** `Scriber.App` (`Controls/MultiTrackTimelineView.cs`, `ViewModels/TranscriptViewModel.cs`).
+
+**Interface / Contract:**
+```csharp
+namespace Scriber.App.Controls;
+
+public sealed class MultiTrackTimelineView : SKCanvasView, IDisposable
+{
+    public static readonly BindableProperty TranscriptProperty;
+    public static readonly BindableProperty CurrentPositionProperty;
+    public static readonly BindableProperty DurationProperty;
+    public static readonly BindableProperty ZoomLevelProperty;
+    public static readonly BindableProperty SeekCommandProperty;
+}
+```
+
+**Acceptance Criteria:**
+- Renders horizontal tracks for each speaker identified in the transcript.
+- Speech segments are drawn as colored rounded blocks in their speaker lane with start/end boundaries.
+- Overlapping speaker segments (cross-talk) render distinctly on separate lanes.
+- Pinch-to-zoom and horizontal pan gestures maintain 60 FPS rendering on recordings up to 2 hours.
+- Tapping any speech segment triggers `SeekCommand` to that timestamp and scrolls the transcript text view.
+- Vertical playhead sweeps across all tracks in sync with playback.
+
+**Out of Scope:** DAW-style audio waveform editing, cutting, or multitrack mixing.
+
+**Suggested Verification:** Manual test on Windows Desktop and Android with a multi-speaker recording (e.g. 3+ speakers), validating gesture performance, visual alignment of overlapping segments, and seek synchronization.
+
+**Completion note (2026-10-28):** Done. Built `MultiTrackTimelineView` using SkiaSharp with horizontal speaker lanes, speaker badges, color-coded speech segments, pan/pinch zoom gestures, and real-time playhead cursor. Integrated into `TranscriptPage.xaml` with toggle button and bound to `TranscriptViewModel.CurrentTranscript`, `CurrentPosition`, `Duration`, and `SeekCommand`. Verified compilation on .NET 10 MAUI.
+

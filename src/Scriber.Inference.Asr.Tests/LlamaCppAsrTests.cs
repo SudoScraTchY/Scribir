@@ -87,4 +87,31 @@ public class LlamaCppAsrTests : IDisposable
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backend.TranscribeAsync(validAudio, new AsrOptions(), cts.Token));
     }
+
+    [Fact]
+    public void BuildPrompt_FormatsCustomVocabularyAndInitialPrompt()
+    {
+        // 1. Neither provided -> null
+        var optionsEmpty = new AsrOptions();
+        Assert.Null(LlamaCppAsrBackend.BuildPrompt(optionsEmpty));
+
+        // 2. Only InitialPrompt
+        var optionsPrompt = new AsrOptions { InitialPrompt = "Technical medical consultation." };
+        Assert.Equal("Technical medical consultation.", LlamaCppAsrBackend.BuildPrompt(optionsPrompt));
+
+        // 3. Only CustomVocabulary
+        var optionsVocab = new AsrOptions
+        {
+            CustomVocabulary = ["Scribir", "Nemotron", "Vazirmatn"]
+        };
+        Assert.Equal("Scribir, Nemotron, Vazirmatn", LlamaCppAsrBackend.BuildPrompt(optionsVocab));
+
+        // 4. Both InitialPrompt and CustomVocabulary combined
+        var optionsBoth = new AsrOptions
+        {
+            InitialPrompt = "Technical discussion on local speech recognition.",
+            CustomVocabulary = ["Scribir", "FastSpeech", "Vazirmatn"]
+        };
+        Assert.Equal("Technical discussion on local speech recognition. Scribir, FastSpeech, Vazirmatn", LlamaCppAsrBackend.BuildPrompt(optionsBoth));
+    }
 }

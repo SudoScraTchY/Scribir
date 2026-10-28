@@ -17,6 +17,17 @@ public sealed class SettingsViewModel : BaseViewModel
     private readonly IProviderSettingsStore _providerSettingsStore;
     private readonly ICompletionProvider _completionProvider;
     private readonly Scriber.Pipeline.Benchmark.IDeviceBenchmarkService? _benchmarkService;
+    private readonly Scriber.Storage.Sync.ISyncService? _syncService;
+
+    // Zero-Cloud Decentralized Sync (PH2.5-SYNC-001)
+    private int _selectedSyncProviderIndex = 0;
+    private string _syncTargetPath = string.Empty;
+    private string _syncUsername = string.Empty;
+    private string _syncPassword = string.Empty;
+    private bool _syncEncryptRemote = false;
+    private string _syncEncryptionPassphrase = string.Empty;
+    private bool _isSyncing = false;
+    private string _syncStatusMessage = "Sync ready";
 
     private bool _isLoadingVoiceprints;
     private bool _isBenchmarking;
@@ -43,6 +54,7 @@ public sealed class SettingsViewModel : BaseViewModel
     private string _selectedSpeakerCount = "Auto";
     private bool _enableVoiceprints = true;
     private bool _saveRawAudio = true;
+    private string _selectedNumeralStyle = "Persian (۰-۹)";
 
     public string AppName => "Scribir";
     public string Version => "1.0.0 (Phase 2 - Offline Native)";
@@ -183,6 +195,25 @@ public sealed class SettingsViewModel : BaseViewModel
         }
     }
 
+    public IReadOnlyList<string> AvailableNumeralStyles { get; } =
+    [
+        "Persian (۰-۹)",
+        "Latin (0-9)",
+        "Unchanged"
+    ];
+
+    public string SelectedNumeralStyle
+    {
+        get => _selectedNumeralStyle;
+        set
+        {
+            if (SetProperty(ref _selectedNumeralStyle, value) && value != null)
+            {
+                Preferences.Default.Set("NumeralStyle", value);
+            }
+        }
+    }
+
     // =========================================================================
     // 2. REVIEW & CONFIDENCE PROPERTIES
     // =========================================================================
@@ -289,6 +320,87 @@ public sealed class SettingsViewModel : BaseViewModel
 
     public ObservableCollection<Scriber.Pipeline.Benchmark.ModelBenchmarkScore> BenchmarkCandidateScores { get; } = [];
 
+    public int SelectedSyncProviderIndex
+    {
+        get => _selectedSyncProviderIndex;
+        set
+        {
+            if (SetProperty(ref _selectedSyncProviderIndex, value))
+            {
+                Preferences.Default.Set("SyncProviderIndex", value);
+                OnPropertyChanged(nameof(IsWebDavSelected));
+            }
+        }
+    }
+
+    public bool IsWebDavSelected => _selectedSyncProviderIndex == 1;
+
+    public string SyncTargetPath
+    {
+        get => _syncTargetPath;
+        set
+        {
+            if (SetProperty(ref _syncTargetPath, value))
+            {
+                Preferences.Default.Set("SyncTargetPath", value);
+            }
+        }
+    }
+
+    public string SyncUsername
+    {
+        get => _syncUsername;
+        set
+        {
+            if (SetProperty(ref _syncUsername, value))
+            {
+                Preferences.Default.Set("SyncUsername", value);
+            }
+        }
+    }
+
+    public string SyncPassword
+    {
+        get => _syncPassword;
+        set
+        {
+            if (SetProperty(ref _syncPassword, value))
+            {
+                Preferences.Default.Set("SyncPassword", value);
+            }
+        }
+    }
+
+    public bool SyncEncryptRemote
+    {
+        get => _syncEncryptRemote;
+        set
+        {
+            if (SetProperty(ref _syncEncryptRemote, value))
+            {
+                Preferences.Default.Set("SyncEncryptRemote", value);
+            }
+        }
+    }
+
+    public string SyncEncryptionPassphrase
+    {
+        get => _syncEncryptionPassphrase;
+        set => SetProperty(ref _syncEncryptionPassphrase, value);
+    }
+
+    public bool IsSyncing
+    {
+        get => _isSyncing;
+        set => SetProperty(ref _isSyncing, value);
+    }
+
+    public string SyncStatusMessage
+    {
+        get => _syncStatusMessage;
+        set => SetProperty(ref _syncStatusMessage, value);
+    }
+
     public ICommand LoadVoiceprintsCommand { get; }
     public ICommand RenameVoiceprintCommand { get; }
     public ICommand DeleteVoiceprintCommand { get; }
@@ -297,6 +409,8 @@ public sealed class SettingsViewModel : BaseViewModel
     public ICommand TestConnectionCommand { get; }
     public ICommand OpenModelsCommand { get; }
     public ICommand RunBenchmarkCommand { get; }
+    public ICommand TestSyncConnectionCommand { get; }
+    public ICommand RunSyncCommand { get; }
 
     public SettingsViewModel(
         IModelCacheManager cacheManager,
@@ -305,7 +419,8 @@ public sealed class SettingsViewModel : BaseViewModel
         IProviderSettingsStore providerSettingsStore,
         ICompletionProvider completionProvider,
         string databasePath,
-        Scriber.Pipeline.Benchmark.IDeviceBenchmarkService? benchmarkService = null)
+        Scriber.Pipeline.Benchmark.IDeviceBenchmarkService? benchmarkService = null,
+        Scriber.Storage.Sync.ISyncService? syncService = null)
     {
         _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
@@ -313,6 +428,7 @@ public sealed class SettingsViewModel : BaseViewModel
         _providerSettingsStore = providerSettingsStore ?? throw new ArgumentNullException(nameof(providerSettingsStore));
         _completionProvider = completionProvider ?? throw new ArgumentNullException(nameof(completionProvider));
         _benchmarkService = benchmarkService;
+        _syncService = syncService;
         DatabasePath = databasePath;
 
         if (_benchmarkService != null)
@@ -341,10 +457,17 @@ public sealed class SettingsViewModel : BaseViewModel
         _selectedSpeakerCount = Preferences.Default.Get("DefaultSpeakerCount", "Auto");
         _enableVoiceprints = Preferences.Default.Get("EnableVoiceprints", true);
         _saveRawAudio = Preferences.Default.Get("SaveRawAudio", true);
+        _selectedNumeralStyle = Preferences.Default.Get("NumeralStyle", "Persian (۰-۹)");
 
         string savedLang = Preferences.Default.Get("DefaultLanguageCode", "auto");
         _selectedLanguageItem = TranscribeViewModel.SupportedLanguages.FirstOrDefault(l => l.Code == savedLang)
             ?? TranscribeViewModel.SupportedLanguages[0];
+
+        _selectedSyncProviderIndex = Preferences.Default.Get("SyncProviderIndex", 0);
+        _syncTargetPath = Preferences.Default.Get("SyncTargetPath", string.Empty);
+        _syncUsername = Preferences.Default.Get("SyncUsername", string.Empty);
+        _syncPassword = Preferences.Default.Get("SyncPassword", string.Empty);
+        _syncEncryptRemote = Preferences.Default.Get("SyncEncryptRemote", false);
 
         LoadVoiceprintsCommand = new Command(async () => await LoadVoiceprintsAsync());
         RenameVoiceprintCommand = new Command<Voiceprint>(async vp => await RenameVoiceprintAsync(vp));
@@ -354,8 +477,88 @@ public sealed class SettingsViewModel : BaseViewModel
         TestConnectionCommand = new Command(async () => await TestConnectionAsync());
         OpenModelsCommand = new Command(async () => await Shell.Current.GoToAsync("//models"));
         RunBenchmarkCommand = new Command(async () => await RunBenchmarkAsync());
+        TestSyncConnectionCommand = new Command(async () => await TestSyncConnectionAsync());
+        RunSyncCommand = new Command(async () => await RunSyncAsync());
 
         Task.Run(InitializeAsync);
+    }
+
+    private async Task TestSyncConnectionAsync()
+    {
+        if (_syncService == null) return;
+        if (string.IsNullOrWhiteSpace(SyncTargetPath))
+        {
+            SyncStatusMessage = "⚠️ Please specify a target folder or WebDAV URL.";
+            return;
+        }
+
+        IsSyncing = true;
+        SyncStatusMessage = "Testing connection...";
+        try
+        {
+            var options = new Scriber.Storage.Sync.SyncOptions(
+                ProviderType: (Scriber.Storage.Sync.SyncProviderType)SelectedSyncProviderIndex,
+                TargetUriOrPath: SyncTargetPath,
+                Username: SyncUsername,
+                PasswordOrToken: SyncPassword);
+
+            bool ok = await _syncService.TestConnectionAsync(options);
+            SyncStatusMessage = ok ? "✓ Connection successful!" : "❌ Connection failed. Check endpoint or permissions.";
+        }
+        catch (Exception ex)
+        {
+            SyncStatusMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            IsSyncing = false;
+        }
+    }
+
+    private async Task RunSyncAsync()
+    {
+        if (_syncService == null) return;
+        if (string.IsNullOrWhiteSpace(SyncTargetPath))
+        {
+            SyncStatusMessage = "⚠️ Please specify a target folder or WebDAV URL.";
+            return;
+        }
+
+        IsSyncing = true;
+        SyncStatusMessage = "Sync in progress...";
+        try
+        {
+            var options = new Scriber.Storage.Sync.SyncOptions(
+                ProviderType: (Scriber.Storage.Sync.SyncProviderType)SelectedSyncProviderIndex,
+                TargetUriOrPath: SyncTargetPath,
+                Username: SyncUsername,
+                PasswordOrToken: SyncPassword,
+                EncryptRemotePayloads: SyncEncryptRemote,
+                EncryptionPassphrase: SyncEncryptionPassphrase);
+
+            var progress = new Progress<Scriber.Storage.Sync.SyncProgress>(p =>
+            {
+                SyncStatusMessage = p.CurrentStep;
+            });
+
+            var result = await _syncService.SyncAsync(options, progress);
+            if (result.Success)
+            {
+                SyncStatusMessage = $"✓ Synced: {result.UploadedCount} uploaded, {result.DownloadedCount} downloaded, {result.ConflictCount} conflicts.";
+            }
+            else
+            {
+                SyncStatusMessage = $"❌ Sync error: {result.ErrorMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            SyncStatusMessage = $"❌ Sync error: {ex.Message}";
+        }
+        finally
+        {
+            IsSyncing = false;
+        }
     }
 
     public async Task RunBenchmarkAsync()

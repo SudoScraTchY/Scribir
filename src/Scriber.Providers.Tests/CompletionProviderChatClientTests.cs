@@ -19,6 +19,17 @@ public class CompletionProviderChatClientTests
             return Task.FromResult($"ECHO: {prompt}");
         }
 
+        public async IAsyncEnumerable<string> CompleteStreamingAsync(
+            string prompt,
+            CompletionOptions? options = null,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            LastPrompt = prompt;
+            LastOptions = options;
+            yield return "ECHO: ";
+            yield return prompt;
+        }
+
         public Task<ConnectionTestResult> TestConnectionAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new ConnectionTestResult(true, "Connected successfully"));
@@ -69,10 +80,12 @@ public class CompletionProviderChatClientTests
             updates.Add(update);
         }
 
-        Assert.Single(updates);
+        Assert.Equal(2, updates.Count);
         Assert.Equal(ChatRole.Assistant, updates[0].Role);
-        Assert.Equal("ECHO: Live test", updates[0].Text);
+        Assert.Equal("ECHO: ", updates[0].Text);
+        Assert.Equal("Live test", updates[1].Text);
         Assert.Equal("local-qwen", updates[0].ModelId);
+        Assert.Equal("ECHO: Live test", string.Concat(updates.Select(u => u.Text)));
     }
 
     [Fact]
@@ -83,5 +96,36 @@ public class CompletionProviderChatClientTests
 
         var retrieved = client.GetService<ICompletionProvider>();
         Assert.Same(echo, retrieved);
+    }
+
+    [Fact]
+    public async Task GetResponseAsync_WithSystemPromptOnly_DoesNotThrow()
+    {
+        var echo = new EchoCompletionProvider();
+        IChatClient client = echo.AsChatClient();
+
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.System, "System instruction only")
+        };
+
+        var response = await client.GetResponseAsync(messages);
+        Assert.NotNull(response);
+        Assert.Equal("ECHO: System instruction only", response.Messages[0].Text);
+    }
+
+    [Fact]
+    public async Task GetStreamingResponseAsync_WithEmptyMessages_YieldsEmpty()
+    {
+        var echo = new EchoCompletionProvider();
+        IChatClient client = echo.AsChatClient();
+
+        var updates = new List<ChatResponseUpdate>();
+        await foreach (var update in client.GetStreamingResponseAsync([]))
+        {
+            updates.Add(update);
+        }
+
+        Assert.Empty(updates);
     }
 }

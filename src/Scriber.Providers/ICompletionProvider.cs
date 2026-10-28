@@ -13,6 +13,11 @@ public interface ICompletionProvider
     Task<string> CompleteAsync(string prompt, CompletionOptions? options = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Sends a completion prompt to the provider and yields generated token deltas in real time.
+    /// </summary>
+    IAsyncEnumerable<string> CompleteStreamingAsync(string prompt, CompletionOptions? options = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Verifies connectivity to the configured endpoint.
     /// </summary>
     Task<ConnectionTestResult> TestConnectionAsync(CancellationToken cancellationToken = default);

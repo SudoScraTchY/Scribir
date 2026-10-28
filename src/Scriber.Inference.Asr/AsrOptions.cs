@@ -16,4 +16,13 @@ public sealed record AsrOptions
 
     /// <summary>Sampling temperature (0.0 for greedy search).</summary>
     public float Temperature { get; init; } = 0.0f;
+
+    /// <summary>Custom domain vocabulary, terminology, and proper nouns for biasing (PH2-ASR-002).</summary>
+    public IReadOnlyList<string>? CustomVocabulary { get; init; }
+
+    /// <summary>Initial text prompt for biasing decoder attention (PH2-ASR-002).</summary>
+    public string? InitialPrompt { get; init; }
+
+    /// <summary>Optional word boost weights (PH2-ASR-002).</summary>
+    public IReadOnlyDictionary<string, float>? WordBoosts { get; init; }
 }

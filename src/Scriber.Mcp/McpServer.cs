@@ -16,6 +16,7 @@ public sealed class McpServer
     private readonly TextReader _input;
     private readonly TextWriter _output;
     private readonly TextWriter _error;
+    private readonly List<string> _customVocabulary = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -292,6 +293,67 @@ public sealed class McpServer
                     },
                     ["required"] = new JsonArray { "voiceprintId" }
                 }
+            },
+            new JsonObject
+            {
+                ["name"] = "inject_custom_vocabulary",
+                ["description"] = "Inject custom vocabulary terms, acronyms, and proper nouns into the session vocabulary store for biased Whisper recognition (PH2-ASR-002).",
+                ["inputSchema"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["terms"] = new JsonObject
+                        {
+                            ["type"] = "array",
+                            ["items"] = new JsonObject { ["type"] = "string" },
+                            ["description"] = "List of vocabulary terms, acronyms, or proper nouns"
+                        },
+                        ["clearExisting"] = new JsonObject
+                        {
+                            ["type"] = "boolean",
+                            ["description"] = "If true, clears previously injected terms before adding new ones (default false)"
+                        }
+                    },
+                    ["required"] = new JsonArray { "terms" }
+                }
+            },
+            new JsonObject
+            {
+                ["name"] = "get_custom_vocabulary",
+                ["description"] = "Retrieve the current active list of custom vocabulary terms configured for ASR biasing.",
+                ["inputSchema"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject()
+                }
+            },
+            new JsonObject
+            {
+                ["name"] = "summarize_audio",
+                ["description"] = "Summarize audio or transcript text directly using an AI provider or extractive summarizer, yielding an overview, key points, and action items.",
+                ["inputSchema"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["transcriptId"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Optional transcript GUID identifier to summarize"
+                        },
+                        ["text"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Optional raw transcript text to summarize directly"
+                        },
+                        ["focus"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "Optional summary focus (e.g. action items, decisions, technical discussion)"
+                        }
+                    }
+                }
             }
         };
 
@@ -317,6 +379,9 @@ public sealed class McpServer
             "get_transcript" => await ExecuteGetTranscriptAsync(arguments, cancellationToken),
             "get_transcript_summary" => await ExecuteGetTranscriptSummaryAsync(arguments, cancellationToken),
             "search_by_voiceprint" => await ExecuteSearchByVoiceprintAsync(arguments, cancellationToken),
+            "inject_custom_vocabulary" => ExecuteInjectCustomVocabulary(arguments),
+            "get_custom_vocabulary" => ExecuteGetCustomVocabulary(),
+            "summarize_audio" => await ExecuteSummarizeAudioAsync(arguments, cancellationToken),
             _ => throw new McpRpcException(-32601, $"Unknown tool: '{toolName}'")
         };
     }
@@ -612,6 +677,188 @@ public sealed class McpServer
                 {
                     ["type"] = "text",
                     ["text"] = resultJson
+                }
+            },
+            ["isError"] = false
+        };
+    }
+
+    private JsonObject ExecuteInjectCustomVocabulary(JsonObject args)
+    {
+        var termsArray = args["terms"]?.AsArray();
+        if (termsArray == null || termsArray.Count == 0)
+        {
+            return CreateToolErrorResult("Missing required parameter 'terms' (must be a non-empty array of strings).");
+        }
+
+        bool clearExisting = args["clearExisting"]?.GetValue<bool?>() ?? false;
+        lock (_customVocabulary)
+        {
+            if (clearExisting)
+            {
+                _customVocabulary.Clear();
+            }
+
+            foreach (var node in termsArray)
+            {
+                string? term = node?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(term))
+                {
+                    string trimmed = term.Trim();
+                    if (!_customVocabulary.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+                    {
+                        _customVocabulary.Add(trimmed);
+                    }
+                }
+            }
+        }
+
+        var resultJson = JsonSerializer.Serialize(new
+        {
+            message = "Custom vocabulary updated successfully.",
+            activeVocabularyCount = _customVocabulary.Count,
+            terms = _customVocabulary
+        }, new JsonSerializerOptions { WriteIndented = true });
+
+        return new JsonObject
+        {
+            ["content"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = resultJson
+                }
+            },
+            ["isError"] = false
+        };
+    }
+
+    private JsonObject ExecuteGetCustomVocabulary()
+    {
+        List<string> copy;
+        lock (_customVocabulary)
+        {
+            copy = _customVocabulary.ToList();
+        }
+
+        var resultJson = JsonSerializer.Serialize(new
+        {
+            activeVocabularyCount = copy.Count,
+            terms = copy
+        }, new JsonSerializerOptions { WriteIndented = true });
+
+        return new JsonObject
+        {
+            ["content"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = resultJson
+                }
+            },
+            ["isError"] = false
+        };
+    }
+
+    private async Task<JsonObject> ExecuteSummarizeAudioAsync(JsonObject args, CancellationToken cancellationToken)
+    {
+        string? text = args["text"]?.GetValue<string>();
+        string? transcriptIdStr = args["transcriptId"]?.GetValue<string>();
+        string? focus = args["focus"]?.GetValue<string>();
+
+        string contentToSummarize;
+        string? title = null;
+
+        if (!string.IsNullOrWhiteSpace(transcriptIdStr))
+        {
+            if (!Guid.TryParse(transcriptIdStr, out var transcriptId))
+            {
+                return CreateToolErrorResult("Invalid 'transcriptId' (must be a valid GUID).");
+            }
+
+            var transcript = await _repository.GetByIdAsync(transcriptId, cancellationToken);
+            if (transcript == null)
+            {
+                return CreateToolErrorResult($"Transcript with ID '{transcriptId}' was not found.");
+            }
+
+            title = transcript.Title;
+            contentToSummarize = string.Join("\n", transcript.Segments.Select(s =>
+            {
+                var spk = transcript.Speakers.FirstOrDefault(sp => sp.Id == s.SpeakerId);
+                string name = spk?.DisplayName ?? s.SpeakerId;
+                return $"{name}: {s.Text}";
+            }));
+        }
+        else if (!string.IsNullOrWhiteSpace(text))
+        {
+            contentToSummarize = text.Trim();
+        }
+        else
+        {
+            return CreateToolErrorResult("Must provide either 'transcriptId' or 'text' to summarize.");
+        }
+
+        if (_summarizer != null)
+        {
+            try
+            {
+                string prompt = string.IsNullOrWhiteSpace(focus)
+                    ? contentToSummarize
+                    : $"Focus: {focus}\n\nAudio Content:\n{contentToSummarize}";
+
+                var summaryResult = await _summarizer.SummarizeAsync(prompt, cancellationToken);
+                var summaryJson = JsonSerializer.Serialize(new
+                {
+                    title,
+                    focus,
+                    summary = summaryResult.Summary,
+                    keyPoints = summaryResult.KeyPoints,
+                    actionItems = summaryResult.ActionItems.Select(a => new { description = a.Description, assignee = a.Assignee })
+                }, new JsonSerializerOptions { WriteIndented = true });
+
+                return new JsonObject
+                {
+                    ["content"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["type"] = "text",
+                            ["text"] = summaryJson
+                        }
+                    },
+                    ["isError"] = false
+                };
+            }
+            catch (Exception ex)
+            {
+                _error.WriteLine($"[Scriber.Mcp] Summarizer failed, using extractive summary: {ex.Message}");
+            }
+        }
+
+        // Extractive fallback
+        var sentences = contentToSummarize.Split(['.', '\n', '!', '?'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var keyPoints = sentences.Where(s => s.Length > 20).Take(5).ToList();
+
+        var fallbackJson = JsonSerializer.Serialize(new
+        {
+            title,
+            focus,
+            summary = $"Summary for audio session ({sentences.Length} statements processed).",
+            keyPoints = keyPoints.Count > 0 ? keyPoints : new List<string> { contentToSummarize },
+            actionItems = Array.Empty<object>()
+        }, new JsonSerializerOptions { WriteIndented = true });
+
+        return new JsonObject
+        {
+            ["content"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = fallbackJson
                 }
             },
             ["isError"] = false

@@ -27,6 +27,8 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     private bool _isSummarizing;
     private string? _summaryOverview;
     private double _playbackProgress;
+    private TimeSpan _currentPosition = TimeSpan.Zero;
+    private bool _isTimelineVisible = true;
     private string _currentPositionText = "00:00";
     private string _durationText = "00:00";
     private SegmentItemViewModel? _selectedSegment;
@@ -38,9 +40,41 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
     public string Title => _transcript?.Title ?? "Transcript";
     public string LanguageCode => _transcript?.LanguageCode ?? string.Empty;
-    public string DurationFormatted => _transcript != null ? $"{_transcript.Audio.Duration:hh\\:mm\\:ss}" : string.Empty;
+    public string DurationFormatted => _transcript != null ? (IsRightToLeft ? ToPersianDigits($"{_transcript.Audio.Duration:hh\\:mm\\:ss}") : $"{_transcript.Audio.Duration:hh\\:mm\\:ss}") : string.Empty;
+    public Transcript? CurrentTranscript => _transcript;
+    public TimeSpan CurrentPosition => _currentPosition;
+    public TimeSpan Duration => _transcript?.Audio.Duration ?? TimeSpan.Zero;
+    public bool IsTimelineVisible
+    {
+        get => _isTimelineVisible;
+        set => SetProperty(ref _isTimelineVisible, value);
+    }
     public FlowDirection LayoutDirection => IsRightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
     public bool IsRightToLeft => IsRtlLanguage(_transcript?.LanguageCode);
+    public string ContentFontFamily => IsRightToLeft ? "Vazirmatn" : "OpenSansRegular";
+    public string HeaderFontFamily => IsRightToLeft ? "VazirmatnBold" : "OpenSansSemibold";
+    public Microsoft.Maui.Layouts.FlexDirection WordFlowDirection =>
+        IsRightToLeft ? Microsoft.Maui.Layouts.FlexDirection.RowReverse : Microsoft.Maui.Layouts.FlexDirection.Row;
+
+    public static string ToPersianDigits(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        var chars = input.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+        {
+            if (chars[i] >= '0' && chars[i] <= '9')
+            {
+                chars[i] = (char)('۰' + (chars[i] - '0'));
+            }
+        }
+        return new string(chars);
+    }
+
+    public string FormatDuration(TimeSpan ts)
+    {
+        string formatted = $"{ts:mm\\:ss}";
+        return IsRightToLeft ? ToPersianDigits(formatted) : formatted;
+    }
 
     private static bool IsRtlLanguage(string? langCode)
     {
@@ -132,6 +166,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     public ICommand PlayPauseCommand { get; }
     public ICommand SeekToSegmentCommand { get; }
     public ICommand SeekCommand { get; }
+    public ICommand ToggleTimelineCommand { get; }
     public ICommand SaveEditCommand { get; }
     public ICommand ExportCommand { get; }
     public ICommand RenameSpeakerCommand { get; }
@@ -163,7 +198,14 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
         {
             if (p is double d) SeekToFraction(d);
             else if (p is float f) SeekToFraction(f);
+            else if (p is TimeSpan ts)
+            {
+                _playback.Seek(ts);
+                _currentPosition = ts;
+                OnPropertyChanged(nameof(CurrentPosition));
+            }
         });
+        ToggleTimelineCommand = new Command(() => IsTimelineVisible = !IsTimelineVisible);
         SaveEditCommand = new Command<SegmentItemViewModel>(async s => await SaveEditAsync(s));
         ExportCommand = new Command(async () => await PromptExportAsync());
         RenameSpeakerCommand = new Command<Speaker>(async s => await HandleSpeakerClickAsync(s));
@@ -252,12 +294,17 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
+                OnPropertyChanged(nameof(CurrentTranscript));
+                OnPropertyChanged(nameof(Duration));
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(LanguageCode));
                 OnPropertyChanged(nameof(DurationFormatted));
                 OnPropertyChanged(nameof(IsRightToLeft));
                 OnPropertyChanged(nameof(LayoutDirection));
-                DurationText = $"{transcript.Audio.Duration:mm\\:ss}";
+                OnPropertyChanged(nameof(ContentFontFamily));
+                OnPropertyChanged(nameof(HeaderFontFamily));
+                OnPropertyChanged(nameof(WordFlowDirection));
+                DurationText = FormatDuration(transcript.Audio.Duration);
 
                 Speakers.Clear();
                 foreach (var spk in transcript.Speakers)
@@ -275,7 +322,7 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
                     speakerMap.TryGetValue(seg.SpeakerId, out var spk);
                     string name = spk?.DisplayName ?? seg.SpeakerId;
                     string color = spk?.ColorHex ?? "#2563EB";
-                    Segments.Add(new SegmentItemViewModel(seg, name, color, threshold));
+                    Segments.Add(new SegmentItemViewModel(seg, name, color, threshold, IsRightToLeft));
                 }
             });
 
@@ -707,7 +754,9 @@ public sealed class TranscriptViewModel : BaseViewModel, IQueryAttributable, IDi
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            CurrentPositionText = $"{pos:mm\\:ss}";
+            _currentPosition = pos;
+            OnPropertyChanged(nameof(CurrentPosition));
+            CurrentPositionText = FormatDuration(pos);
             if (_transcript != null && _transcript.Audio.Duration.TotalSeconds > 0)
             {
                 _playbackProgress = Math.Clamp(pos.TotalSeconds / _transcript.Audio.Duration.TotalSeconds, 0.0, 1.0);

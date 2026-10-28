@@ -1,6 +1,7 @@
 namespace Scriber.Providers;
 
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -128,6 +129,105 @@ public sealed class OpenAiCompatibleProvider : ICompletionProvider
         return ExtractContent(responseJson);
     }
 
+    public async IAsyncEnumerable<string> CompleteStreamingAsync(
+        string prompt,
+        CompletionOptions? options = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(prompt);
+
+        var settings = await GetSettingsAsync(cancellationToken);
+        if (!settings.IsConfigured)
+        {
+            throw new ProviderException("OpenAI-compatible provider is not configured. Base URL is missing.");
+        }
+
+        string endpoint = ResolveChatCompletionsUrl(settings.BaseUrl!);
+        string model = string.IsNullOrWhiteSpace(settings.ModelName) ? "default" : settings.ModelName;
+
+        options ??= new CompletionOptions();
+
+        var messages = new List<object>();
+        if (!string.IsNullOrWhiteSpace(options.SystemPrompt))
+        {
+            messages.Add(new { role = "system", content = options.SystemPrompt });
+        }
+        messages.Add(new { role = "user", content = prompt });
+
+        var requestBody = new Dictionary<string, object?>
+        {
+            ["model"] = model,
+            ["messages"] = messages,
+            ["temperature"] = options.Temperature,
+            ["stream"] = true
+        };
+
+        if (options.MaxTokens.HasValue)
+        {
+            requestBody["max_tokens"] = options.MaxTokens.Value;
+        }
+
+        string jsonPayload = JsonSerializer.Serialize(requestBody);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey.Trim());
+        }
+
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(settings.TimeoutSeconds > 0 ? settings.TimeoutSeconds : 60));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, linkedCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            throw new ProviderException($"Streaming request to '{endpoint}' timed out after {settings.TimeoutSeconds}s.");
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new ProviderException($"Failed to communicate with provider at '{endpoint}': {ex.Message}", innerException: ex);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorJson = await response.Content.ReadAsStringAsync(linkedCts.Token).ConfigureAwait(false);
+            string errorMessage = ExtractErrorMessage(errorJson) ?? response.ReasonPhrase ?? "HTTP " + (int)response.StatusCode;
+            throw new ProviderException($"Provider returned error {(int)response.StatusCode}: {errorMessage}", (int)response.StatusCode);
+        }
+
+        using var stream = await response.Content.ReadAsStreamAsync(linkedCts.Token).ConfigureAwait(false);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+
+        while (!linkedCts.Token.IsCancellationRequested)
+        {
+            string? line = await reader.ReadLineAsync(linkedCts.Token).ConfigureAwait(false);
+            if (line == null) break;
+
+            line = line.Trim();
+            if (line.Length == 0 || line.StartsWith(':')) continue;
+
+            if (line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                string data = line.Substring(5).Trim();
+                if (data == "[DONE]") break;
+
+                string? delta = ExtractStreamingDelta(data);
+                if (!string.IsNullOrEmpty(delta))
+                {
+                    yield return delta;
+                }
+            }
+        }
+    }
+
     public async Task<ConnectionTestResult> TestConnectionAsync(CancellationToken cancellationToken = default)
     {
         var settings = await GetSettingsAsync(cancellationToken);
@@ -190,6 +290,26 @@ public sealed class OpenAiCompatibleProvider : ICompletionProvider
         catch
         {
             // Ignore parse errors on error payload
+        }
+        return null;
+    }
+
+    private static string? ExtractStreamingDelta(string json)
+    {
+        try
+        {
+            var node = JsonNode.Parse(json);
+            var choices = node?["choices"]?.AsArray();
+            if (choices != null && choices.Count > 0)
+            {
+                var delta = choices[0]?["delta"];
+                var content = delta?["content"]?.GetValue<string>();
+                return content;
+            }
+        }
+        catch
+        {
+            // Ignore parse errors on streaming chunks
         }
         return null;
     }

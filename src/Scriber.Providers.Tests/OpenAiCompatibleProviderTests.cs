@@ -255,4 +255,42 @@ public class OpenAiCompatibleProviderTests
         Assert.Null(parsed.ActionItems[2].Assignee);
         Assert.Equal("Verify all unit test fixtures pass deterministically.", parsed.ActionItems[2].Description);
     }
+
+    [Fact]
+    public async Task CompleteStreamingAsync_ParsesServerSentEventsAndStreamsDeltas()
+    {
+        string ssePayload = 
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Real-time\"}}]}\n\n" +
+            "data: {\"choices\":[{\"delta\":{\"content\":\" token\"}}]}\n\n" +
+            "data: {\"choices\":[{\"delta\":{\"content\":\" streaming.\"}}]}\n\n" +
+            "data: [DONE]\n\n";
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ssePayload, Encoding.UTF8, "text/event-stream")
+            };
+        });
+
+        var settings = new ProviderSettings
+        {
+            BaseUrl = "http://localhost:11434/v1",
+            ModelName = "test-model"
+        };
+
+        var provider = new OpenAiCompatibleProvider(settings, new HttpClient(handler));
+
+        var chunks = new List<string>();
+        await foreach (var chunk in provider.CompleteStreamingAsync("Hello"))
+        {
+            chunks.Add(chunk);
+        }
+
+        Assert.Equal(3, chunks.Count);
+        Assert.Equal("Real-time", chunks[0]);
+        Assert.Equal(" token", chunks[1]);
+        Assert.Equal(" streaming.", chunks[2]);
+        Assert.Equal("Real-time token streaming.", string.Concat(chunks));
+    }
 }

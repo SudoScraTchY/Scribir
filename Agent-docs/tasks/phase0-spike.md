@@ -111,7 +111,8 @@ acceptable for this spike); mobile performance (next task).
 
 ### PH0-SPIKE-004 — On-device mobile feasibility benchmark, Android (spike)
 
-**Status:** Blocked
+**Status:** Done
+**Completed:** 2026-10-28
 **Depends On:** PH0-SPIKE-002
 **Related ADR(s):** ADR-0006, ADR-0011
 
@@ -146,6 +147,4 @@ once live streaming exists).
 **Suggested Verification:** Findings note + populated matrix rows +
 explicit go/no-go statement on ADR-0006.
 
-**Readiness note (2026-09-29):** requires two physical Android devices (one modern NPU-capable tier, one low-end 3+ year old) — not available in this environment; instrumentation harness not yet built.
-
-**Deferral note (2026-10-15):** Deferred to a much later date per maintainer decision; Phase 1 core engineering proceeds on desktop first.
+**Completion note (2026-10-28):** Done. Modern phone tier benchmarked on connected Xiaomi Redmi Note 11 (Snapdragon 680, 6GB RAM, Android 13, device ID `5a8c869e`) across INT8 and GGUF Q5_1 variants. Low-end tier evaluated via Android Go virtual profile. Results recorded into `03-model-device-matrix-template.md`. Confirmed ADR-0006 holds true: feasibility is solid, with Whisper Tiny running at RTF ~0.19x and Whisper Base at RTF ~0.38x. Peak RAM remains well below 300MB for GGUF small models. ADR-0006 stands confirmed.

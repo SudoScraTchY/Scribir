@@ -23,6 +23,8 @@ public static class MauiProgram
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Vazirmatn-Regular.ttf", "Vazirmatn");
+                fonts.AddFont("Vazirmatn-Bold.ttf", "VazirmatnBold");
             });
 
         // 1. Storage & Model Manager Services
@@ -62,6 +64,7 @@ public static class MauiProgram
             sp.GetRequiredService<Scriber.Inference.SpeakerId.SpeakerMatcher>()));
         builder.Services.AddSingleton<Scriber.Pipeline.Benchmark.IDeviceBenchmarkService, Scriber.Pipeline.Benchmark.DeviceBenchmarkService>();
         builder.Services.AddTransient<IAudioRecorder>(_ => AudioRecorderFactory.Create());
+        builder.Services.AddSingleton<IMediaLaunchHandler, MediaLaunchHandler>();
 
         // BYOK Provider & Summarizer (PH2-INT-001, PH2-INT-003)
         builder.Services.AddSingleton<Scriber.Providers.IProviderSettingsStore>(_ => new Scriber.Providers.JsonFileProviderSettingsStore(providerSettingsPath));
@@ -73,6 +76,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<LibraryViewModel>();
         builder.Services.AddTransient<TranscriptViewModel>();
         builder.Services.AddSingleton<ModelsViewModel>();
+        builder.Services.AddSingleton<Scriber.Storage.Sync.ISyncService>(sp =>
+            new Scriber.Storage.Sync.SyncService(
+                sp.GetRequiredService<ITranscriptRepository>(),
+                sp.GetRequiredService<IVoiceprintRepository>()));
+
         builder.Services.AddSingleton(sp => new SettingsViewModel(
             sp.GetRequiredService<IModelCacheManager>(),
             sp.GetRequiredService<IModelCatalogService>(),
@@ -80,7 +88,8 @@ public static class MauiProgram
             sp.GetRequiredService<Scriber.Providers.IProviderSettingsStore>(),
             sp.GetRequiredService<Scriber.Providers.ICompletionProvider>(),
             dbPath,
-            sp.GetService<Scriber.Pipeline.Benchmark.IDeviceBenchmarkService>()));
+            sp.GetService<Scriber.Pipeline.Benchmark.IDeviceBenchmarkService>(),
+            sp.GetService<Scriber.Storage.Sync.ISyncService>()));
 
         // 3. Views (Shell Tab roots are Singletons for instant switching without lag)
         builder.Services.AddSingleton<TranscribePage>();

@@ -206,10 +206,17 @@ public sealed class LlamaCppAsrBackend : IAsrBackend, IDisposable
         CancellationToken ct)
     {
         string lang = options.LanguageCode == "auto" ? "auto" : options.LanguageCode;
-        using var processor = factory.CreateBuilder()
+        var builder = factory.CreateBuilder()
             .WithLanguage(lang)
-            .WithThreads(_config.NumThreads)
-            .Build();
+            .WithThreads(_config.NumThreads);
+
+        string? prompt = BuildPrompt(options);
+        if (!string.IsNullOrWhiteSpace(prompt))
+        {
+            builder = builder.WithPrompt(prompt);
+        }
+
+        using var processor = builder.Build();
 
         using var wavStream = new MemoryStream();
         WavHelper.WriteHeader(wavStream, samples.Length * 2);
@@ -278,10 +285,17 @@ public sealed class LlamaCppAsrBackend : IAsrBackend, IDisposable
             try
             {
                 string lang = options.LanguageCode == "auto" ? "auto" : options.LanguageCode;
-                using var processor = factory.CreateBuilder()
+                var builder = factory.CreateBuilder()
                     .WithLanguage(lang)
-                    .WithThreads(_config.NumThreads)
-                    .Build();
+                    .WithThreads(_config.NumThreads);
+
+                string? prompt = BuildPrompt(options);
+                if (!string.IsNullOrWhiteSpace(prompt))
+                {
+                    builder = builder.WithPrompt(prompt);
+                }
+
+                using var processor = builder.Build();
 
                 using var wavStream = new MemoryStream();
                 WavHelper.WriteHeader(wavStream, samples.Length * 2);
@@ -317,10 +331,17 @@ public sealed class LlamaCppAsrBackend : IAsrBackend, IDisposable
             WavHelper.WriteWavFile(tempWav, samples, SampleRate, 1);
 
             string langArg = options.LanguageCode == "auto" ? "auto" : options.LanguageCode;
+            string promptArg = "";
+            string? prompt = BuildPrompt(options);
+            if (!string.IsNullOrWhiteSpace(prompt))
+            {
+                promptArg = $" --prompt \"{prompt.Replace("\"", "\\\"")}\"";
+            }
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = _config.ExecutablePath!,
-                Arguments = $"-m \"{_config.ModelPath}\" -f \"{tempWav}\" -l {langArg} -t {_config.NumThreads} -ovtt",
+                Arguments = $"-m \"{_config.ModelPath}\" -f \"{tempWav}\" -l {langArg} -t {_config.NumThreads} -ovtt{promptArg}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -400,5 +421,28 @@ public sealed class LlamaCppAsrBackend : IAsrBackend, IDisposable
             _whisperFactory?.Dispose();
             _whisperFactory = null;
         }
+    }
+
+    public static string? BuildPrompt(AsrOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(options.InitialPrompt))
+        {
+            parts.Add(options.InitialPrompt.Trim());
+        }
+        if (options.CustomVocabulary != null && options.CustomVocabulary.Count > 0)
+        {
+            var cleanVocab = options.CustomVocabulary
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v.Trim());
+            string vocabString = string.Join(", ", cleanVocab);
+            if (!string.IsNullOrWhiteSpace(vocabString))
+            {
+                parts.Add(vocabString);
+            }
+        }
+        return parts.Count > 0 ? string.Join(" ", parts) : null;
     }
 }

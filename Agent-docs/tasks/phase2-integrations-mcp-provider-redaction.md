@@ -175,3 +175,45 @@ can be a later enhancement.
 **Suggested Verification:** Manual test: transcribe, manually correct a
 segment, re-run with a different model/config, confirm the correction is
 surfaced as a reconciliation choice rather than silently overwritten.
+
+---
+
+### PH2-ASR-002 — Custom vocabulary & word-boosting in ASR pipeline
+
+**Status:** Done  
+**Completed:** 2026-10-28  
+**Depends On:** PH1-CORE-005, PH1-CORE-006  
+**Related ADR(s):** ADR-0005, ADR-0007  
+
+**Goal:** Allow users to provide domain-specific terminology, proper nouns, and acronyms to bias the local Whisper decoder toward accurate recognition.
+
+**Scope:** `Scriber.Inference.Asr` (`AsrOptions.cs`, `LlamaCppAsrBackend.cs`, `SherpaWhisperAsrBackend.cs`), `Scriber.App` (`SettingsPage.xaml`, `ImportPage.xaml`).
+
+**Interface / Contract:**
+```csharp
+namespace Scriber.Inference.Asr;
+
+public sealed record AsrOptions
+{
+    public string LanguageCode { get; init; } = "en";
+    public string Task { get; init; } = "transcribe";
+    public bool EnableTokenTimestamps { get; init; } = true;
+    public float Temperature { get; init; } = 0.0f;
+
+    // PH2-ASR-002 additions:
+    public IReadOnlyList<string>? CustomVocabulary { get; init; }
+    public string? InitialPrompt { get; init; }
+    public IReadOnlyDictionary<string, float>? WordBoosts { get; init; }
+}
+```
+
+**Acceptance Criteria:**
+- `AsrOptions` extended with `CustomVocabulary`, `InitialPrompt`, and `WordBoosts`.
+- In `LlamaCppAsrBackend.cs`, when `CustomVocabulary` or `InitialPrompt` is provided, `WhisperFactory.CreateBuilder()` formats and passes the prompt to `.WithPrompt(...)`.
+- In `SherpaWhisperAsrBackend.cs`, evaluate hotwords capability (`OfflineRecognizerConfig.HotwordsFile` / keywords file) and document backend-specific constraints.
+- Existing `IAsrBackend.TranscribeAsync` and `TranscribeStreamingAsync` signatures remain strictly backward-compatible.
+- Unit tests in `Scriber.Inference.Asr.Tests` verify that custom vocabulary tokens are correctly passed to `WhisperProcessor` and do not cause regressions.
+
+**Out of Scope:** Model fine-tuning or cloud acoustic adaptation.
+
+**Suggested Verification:** Unit tests with mock `WhisperProcessor` parameters verifying prompt injection; manual transcription test comparing standard vs biased decoding on technical jargon.

@@ -11,7 +11,7 @@
              FlowDirection="{Binding LayoutDirection}"
              BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray950}}">
 
-    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
+    <Grid RowDefinitions="Auto, Auto, Auto, Auto, *, Auto">
         
         <!-- Top Toolbar Header -->
         <Border Grid.Row="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}" Padding="16,12">
@@ -24,6 +24,12 @@
                     <Label Text="{Binding DurationFormatted, StringFormat='Duration: {0}'}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                 </VerticalStackLayout>
                 <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                    <Button Text="📊 Timeline"
+                            Command="{Binding ToggleTimelineCommand}"
+                            FontSize="12" Padding="12,6" HeightRequest="36" CornerRadius="8"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource White}}"
+                            FontAttributes="Bold" />
                     <Button Text="✨ Summarize"
                             Command="{Binding SummarizeCommand}"
                             IsEnabled="{Binding CanSummarize}"
@@ -62,8 +68,26 @@
             </HorizontalStackLayout>
         </Border>
 
-        <!-- Meeting Summary & Action Items Card (PH2-INT-003) -->
+        <!-- Multi-Track Diarization Timeline View (ADR-0002, ADR-0004, PH2-UI-009) -->
         <Border Grid.Row="2"
+                IsVisible="{Binding IsTimelineVisible}"
+                StrokeThickness="1"
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray950}}"
+                Margin="12,4" Padding="0">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="8" />
+            </Border.StrokeShape>
+            <controls:MultiTrackTimelineView HeightRequest="130"
+                                            Transcript="{Binding CurrentTranscript}"
+                                            CurrentPosition="{Binding CurrentPosition}"
+                                            Duration="{Binding Duration}"
+                                            SeekCommand="{Binding SeekCommand}"
+                                            HorizontalOptions="Fill" />
+        </Border>
+
+        <!-- Meeting Summary & Action Items Card (PH2-INT-003) -->
+        <Border Grid.Row="3"
                 IsVisible="{Binding HasSummary}"
                 StrokeThickness="1" Stroke="{StaticResource Success}"
                 BackgroundColor="{AppThemeBinding Light=#ECFDF5, Dark=#064E3B}"
@@ -92,7 +116,7 @@
         </Border>
 
         <!-- Transcript Segments List -->
-        <CollectionView Grid.Row="3" ItemsSource="{Binding Segments}" SelectionMode="Single" SelectedItem="{Binding SelectedSegment}">
+        <CollectionView Grid.Row="4" ItemsSource="{Binding Segments}" SelectionMode="Single" SelectedItem="{Binding SelectedSegment}">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:SegmentItemViewModel">
                     <Border StrokeThickness="1"
@@ -141,7 +165,9 @@
 
                             <!-- Interactive Rich Word View with Confidence Highlighting (PH1-UI-007) -->
                             <FlexLayout BindableLayout.ItemsSource="{Binding WordItems}"
-                                        Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                        Wrap="Wrap"
+                                        Direction="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=WordFlowDirection}"
+                                        AlignItems="Center"
                                         IsVisible="{Binding ShowRichWordsView}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:WordItemViewModel">
@@ -155,6 +181,7 @@
                                                 <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SegmentItemViewModel}}, Path=StartEditWordCommand}" CommandParameter="{Binding .}" />
                                             </Border.GestureRecognizers>
                                             <Label Text="{Binding Text}" FontSize="14"
+                                                   FontFamily="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=ContentFontFamily}"
                                                    TextDecorations="{Binding TextDecoration}"
                                                    TextColor="{Binding IsLowConfidence, Converter={StaticResource BoolToValueConverter}, ConverterParameter='#B45309:#1F2937'}" />
                                         </Border>
@@ -164,12 +191,14 @@
 
                             <!-- Standard Text Label for Segments without Low-Confidence Flagging -->
                             <Label Text="{Binding Text}" FontSize="14" LineHeight="1.3" LineBreakMode="WordWrap"
+                                   FontFamily="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=ContentFontFamily}"
                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray100}}"
                                    IsVisible="{Binding ShowStandardTextView}" />
 
                             <!-- Edit Mode Input -->
                             <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="8">
                                 <Editor Text="{Binding EditText}" AutoSize="TextChanges" FontSize="14"
+                                        FontFamily="{Binding Source={RelativeSource AncestorType={x:Type vm:TranscriptViewModel}}, Path=ContentFontFamily}"
                                         BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                         TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
                                 <HorizontalStackLayout Spacing="8" HorizontalOptions="End">
@@ -188,7 +217,7 @@
         </CollectionView>
 
         <!-- Playback Controller Bar -->
-        <Border Grid.Row="4" StrokeThickness="1"
+        <Border Grid.Row="5" StrokeThickness="1"
                 Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray800}}"
                 BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                 Padding="16,10">

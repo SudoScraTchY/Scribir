@@ -314,7 +314,7 @@ public class McpServerTests
     }
 
     [Fact]
-    public async Task ToolsList_IncludesAllFiveTools()
+    public async Task ToolsList_IncludesAllEightTools()
     {
         var repo = new MockTranscriptRepository();
         var server = new McpServer(repo);
@@ -325,13 +325,111 @@ public class McpServerTests
         Assert.NotNull(response);
         var tools = response!["result"]?["tools"]?.AsArray();
         Assert.NotNull(tools);
-        Assert.Equal(5, tools!.Count);
+        Assert.Equal(8, tools!.Count);
         var toolNames = tools.Select(t => t?["name"]?.GetValue<string>()).ToList();
         Assert.Contains("list_transcripts", toolNames);
         Assert.Contains("search_transcripts", toolNames);
         Assert.Contains("get_transcript", toolNames);
         Assert.Contains("get_transcript_summary", toolNames);
         Assert.Contains("search_by_voiceprint", toolNames);
+        Assert.Contains("inject_custom_vocabulary", toolNames);
+        Assert.Contains("get_custom_vocabulary", toolNames);
+        Assert.Contains("summarize_audio", toolNames);
+    }
+
+    [Fact]
+    public async Task ToolsCall_InjectAndGetCustomVocabulary_ManagesTermsCorrectly()
+    {
+        var repo = new MockTranscriptRepository();
+        var server = new McpServer(repo);
+
+        // 1. Inject initial terms
+        string injectReq = """
+        {
+            "jsonrpc": "2.0",
+            "id": 105,
+            "method": "tools/call",
+            "params": {
+                "name": "inject_custom_vocabulary",
+                "arguments": {
+                    "terms": ["Scribir", "Vazirmatn", "Nemotron"]
+                }
+            }
+        }
+        """;
+        var injectResp = await server.ProcessMessageAsync(injectReq);
+        Assert.NotNull(injectResp);
+        Assert.False(injectResp!["result"]?["isError"]?.GetValue<bool>());
+
+        // 2. Get terms
+        string getReq = """
+        {
+            "jsonrpc": "2.0",
+            "id": 106,
+            "method": "tools/call",
+            "params": {
+                "name": "get_custom_vocabulary",
+                "arguments": {}
+            }
+        }
+        """;
+        var getResp = await server.ProcessMessageAsync(getReq);
+        Assert.NotNull(getResp);
+        string text = getResp!["result"]?["content"]?.AsArray()?[0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("Scribir", text);
+        Assert.Contains("Vazirmatn", text);
+        Assert.Contains("Nemotron", text);
+
+        // 3. Inject with clearExisting
+        string clearAndInjectReq = """
+        {
+            "jsonrpc": "2.0",
+            "id": 107,
+            "method": "tools/call",
+            "params": {
+                "name": "inject_custom_vocabulary",
+                "arguments": {
+                    "terms": ["FastSpeech"],
+                    "clearExisting": true
+                }
+            }
+        }
+        """;
+        await server.ProcessMessageAsync(clearAndInjectReq);
+        var getResp2 = await server.ProcessMessageAsync(getReq);
+        string text2 = getResp2!["result"]?["content"]?.AsArray()?[0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("FastSpeech", text2);
+        Assert.DoesNotContain("Vazirmatn", text2);
+    }
+
+    [Fact]
+    public async Task ToolsCall_SummarizeAudio_WithDirectText_ReturnsSummary()
+    {
+        var repo = new MockTranscriptRepository();
+        var server = new McpServer(repo);
+
+        string request = """
+        {
+            "jsonrpc": "2.0",
+            "id": 108,
+            "method": "tools/call",
+            "params": {
+                "name": "summarize_audio",
+                "arguments": {
+                    "text": "The zero allocation ring buffer eliminated GC pressure. Real token streaming was verified with server sent events.",
+                    "focus": "performance"
+                }
+            }
+        }
+        """;
+        var response = await server.ProcessMessageAsync(request);
+
+        Assert.NotNull(response);
+        var content = response!["result"]?["content"]?.AsArray();
+        Assert.NotNull(content);
+        string text = content![0]?["text"]?.GetValue<string>() ?? "";
+        Assert.Contains("Summary for audio session", text);
+        Assert.Contains("zero allocation ring buffer", text);
     }
 
     [Fact]

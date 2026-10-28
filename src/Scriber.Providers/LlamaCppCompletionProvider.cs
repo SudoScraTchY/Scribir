@@ -44,6 +44,19 @@ public sealed class LlamaCppCompletionProvider : ICompletionProvider
         return GenerateEmbeddedSummary(prompt);
     }
 
+    public async IAsyncEnumerable<string> CompleteStreamingAsync(
+        string prompt,
+        CompletionOptions? options = null,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        string full = await CompleteAsync(prompt, options, cancellationToken).ConfigureAwait(false);
+        var words = full.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            yield return (i == 0 ? "" : " ") + words[i];
+        }
+    }
+
     public async Task<ConnectionTestResult> TestConnectionAsync(CancellationToken cancellationToken = default)
     {
         if (!IsConfigured)

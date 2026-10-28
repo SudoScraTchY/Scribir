@@ -26,7 +26,8 @@ public sealed class SegmentItemViewModel : BaseViewModel
     public string SpeakerColorHex { get; }
     public TimeSpan Start { get; }
     public TimeSpan End { get; }
-    public string TimeString => $"{Start:mm\\:ss} - {End:mm\\:ss}";
+    private readonly bool _isRtl;
+    public string TimeString => _isRtl ? TranscriptViewModel.ToPersianDigits($"{Start:mm\\:ss} - {End:mm\\:ss}") : $"{Start:mm\\:ss} - {End:mm\\:ss}";
     public IReadOnlyList<Word> Words { get; }
 
     public ObservableCollection<WordItemViewModel> WordItems { get; } = [];
@@ -77,7 +78,7 @@ public sealed class SegmentItemViewModel : BaseViewModel
     public ICommand ToggleEditCommand { get; }
     public ICommand StartEditWordCommand { get; }
 
-    public SegmentItemViewModel(Segment segment, string speakerName, string colorHex, double confidenceThreshold = 0.80)
+    public SegmentItemViewModel(Segment segment, string speakerName, string colorHex, double confidenceThreshold = 0.80, bool isRtl = false)
     {
         SpeakerId = segment.SpeakerId;
         _speakerName = speakerName;
@@ -86,6 +87,7 @@ public sealed class SegmentItemViewModel : BaseViewModel
         End = segment.End;
         Words = segment.Words;
         _confidenceThreshold = confidenceThreshold;
+        _isRtl = isRtl;
 
         _text = string.Join(" ", segment.Words.Select(w => w.Text)).Trim();
         if (string.IsNullOrWhiteSpace(_text) && !string.IsNullOrWhiteSpace(segment.Text))

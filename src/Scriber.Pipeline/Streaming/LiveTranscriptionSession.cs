@@ -22,8 +22,8 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
     private readonly object _bufferLock = new();
     private readonly SemaphoreSlim _processLock = new(1, 1);
 
-    private float[] _rentedBuffer;
-    private int _bufferedCount;
+    private readonly PooledAudioRingBuffer _ringBuffer;
+    private readonly float[] _chunkProcessingBuffer;
 
     private bool _isPaused;
     private bool _disposed;
@@ -52,8 +52,8 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
         _asr = asr ?? throw new ArgumentNullException(nameof(asr));
         _diarizer = diarizer ?? throw new ArgumentNullException(nameof(diarizer));
         _options = options ?? new TranscriptionPipelineOptions();
-        _rentedBuffer = ArrayPool<float>.Shared.Rent(64000);
-        _bufferedCount = 0;
+        _ringBuffer = new PooledAudioRingBuffer(64000);
+        _chunkProcessingBuffer = new float[ChunkWindowSamples];
     }
 
     public async ValueTask PushAudioAsync(ReadOnlyMemory<float> samples, TimeSpan timestamp, CancellationToken ct = default)
@@ -66,23 +66,9 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
         bool shouldTrigger;
         lock (_bufferLock)
         {
-            // Ensure buffer capacity with zero-alloc pooled array expansion if needed
-            int neededCapacity = _bufferedCount + samples.Length;
-            if (neededCapacity > _rentedBuffer.Length)
-            {
-                int newCapacity = Math.Max(_rentedBuffer.Length * 2, neededCapacity);
-                float[] newBuffer = ArrayPool<float>.Shared.Rent(newCapacity);
-                _rentedBuffer.AsSpan(0, _bufferedCount).CopyTo(newBuffer);
-                ArrayPool<float>.Shared.Return(_rentedBuffer);
-                _rentedBuffer = newBuffer;
-            }
-
-            // Zero-alloc direct span copy into rented buffer
-            samples.Span.CopyTo(_rentedBuffer.AsSpan(_bufferedCount));
-            _bufferedCount += samples.Length;
+            _ringBuffer.Write(samples.Span);
             _currentSessionTime = timestamp;
-
-            shouldTrigger = _bufferedCount >= ChunkWindowSamples;
+            shouldTrigger = _ringBuffer.Count >= ChunkWindowSamples;
         }
 
         // When we have accumulated enough audio (at least 2.0s), trigger processing
@@ -117,29 +103,19 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
             {
                 ct.ThrowIfCancellationRequested();
 
-                float[] samplesToProcess;
                 int sampleCount;
                 lock (_bufferLock)
                 {
-                    if (_disposed || _bufferedCount < ChunkWindowSamples)
+                    if (_disposed || _ringBuffer.Count < ChunkWindowSamples)
                     {
                         break;
                     }
 
                     sampleCount = ChunkWindowSamples;
-                    samplesToProcess = new float[sampleCount];
-                    _rentedBuffer.AsSpan(0, sampleCount).CopyTo(samplesToProcess);
-
-                    // Shift remaining unprocessed samples to beginning of buffer
-                    int remaining = _bufferedCount - sampleCount;
-                    if (remaining > 0)
-                    {
-                        _rentedBuffer.AsSpan(sampleCount, remaining).CopyTo(_rentedBuffer.AsSpan(0));
-                    }
-                    _bufferedCount = remaining;
+                    _ringBuffer.Read(_chunkProcessingBuffer.AsSpan(0, sampleCount));
                 }
 
-                await RunWindowInferenceAsync(samplesToProcess, sampleCount, isFinal: false, ct).ConfigureAwait(false);
+                await RunWindowInferenceAsync(_chunkProcessingBuffer, sampleCount, isFinal: false, ct).ConfigureAwait(false);
             }
         }
         finally
@@ -211,16 +187,15 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
 
             lock (_bufferLock)
             {
-                if (_bufferedCount >= 8000) // At least 0.5s of audio
+                if (_ringBuffer.Count >= 8000) // At least 0.5s of audio
                 {
-                    remainingCount = _bufferedCount;
+                    remainingCount = _ringBuffer.Count;
                     remainingSamples = new float[remainingCount];
-                    _rentedBuffer.AsSpan(0, remainingCount).CopyTo(remainingSamples);
-                    _bufferedCount = 0;
+                    _ringBuffer.Read(remainingSamples);
                 }
                 else
                 {
-                    _bufferedCount = 0;
+                    _ringBuffer.Clear();
                 }
             }
 
@@ -307,12 +282,7 @@ public sealed class LiveTranscriptionSession : ILiveTranscriptionSession
             _disposed = true;
             lock (_bufferLock)
             {
-                var buf = Interlocked.Exchange(ref _rentedBuffer, null!);
-                if (buf != null)
-                {
-                    ArrayPool<float>.Shared.Return(buf);
-                }
-                _bufferedCount = 0;
+                _ringBuffer.Dispose();
             }
             _processLock.Dispose();
         }

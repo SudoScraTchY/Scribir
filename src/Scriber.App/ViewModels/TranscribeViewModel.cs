@@ -31,7 +31,7 @@ public record LiveSegmentItem(string SpeakerId, string SpeakerDisplayName, strin
 /// Strictly enforces downloaded-only model selection, multi-model pipeline combination (ASR + Diarization + VAD + Voiceprints),
 /// live session expansion/minimization, and raw audio session preservation.
 /// </summary>
-public sealed class TranscribeViewModel : BaseViewModel, IDisposable
+public sealed class TranscribeViewModel : BaseViewModel, IQueryAttributable, IDisposable
 {
     public static readonly IReadOnlyList<LanguageItem> SupportedLanguages =
     [
@@ -229,6 +229,28 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
     {
         get => _selectedFileName;
         set => SetProperty(ref _selectedFileName, value);
+    }
+
+    public void SetImportedFile(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath)) return;
+        SelectedFilePath = filePath;
+        SelectedFileName = Path.GetFileName(filePath);
+        SelectedModeIndex = 1; // Switch to import tab
+        StatusMessage = $"Ready to transcribe: {SelectedFileName}";
+        RefreshCommands();
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("file", out var fileObj) && fileObj is string filePath && !string.IsNullOrWhiteSpace(filePath))
+        {
+            SetImportedFile(filePath);
+        }
+        else if (query.TryGetValue("path", out var pathObj) && pathObj is string p && !string.IsNullOrWhiteSpace(p))
+        {
+            SetImportedFile(p);
+        }
     }
 
     public bool IsRecording
@@ -752,6 +774,14 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
                 ? $"Live Recording ({DateTime.Now:MMM dd, HH:mm})"
                 : Path.GetFileNameWithoutExtension(audioFilePath);
 
+            string numeralPref = Preferences.Default.Get("NumeralStyle", "Persian (۰-۹)");
+            var numeralStyle = numeralPref switch
+            {
+                "Latin (0-9)" or "Latin" => Scriber.Pipeline.Normalization.NumeralStyle.Latin,
+                "Persian (۰-۹)" or "Persian" => Scriber.Pipeline.Normalization.NumeralStyle.Persian,
+                _ => Scriber.Pipeline.Normalization.NumeralStyle.Unchanged
+            };
+
             var options = new TranscriptionPipelineOptions
             {
                 Title = sessionTitle,
@@ -761,7 +791,11 @@ public sealed class TranscribeViewModel : BaseViewModel, IDisposable
                 EnableDiarization = EnableDiarization,
                 EnableVad = EnableVad,
                 EnableVoiceprints = EnableVoiceprints,
-                DiarizationOptions = diarizationOptions
+                DiarizationOptions = diarizationOptions,
+                NormalizationOptions = new Scriber.Pipeline.Normalization.NormalizationOptions
+                {
+                    NumeralStyle = numeralStyle
+                }
             };
 
             var pipeline = _pipelineFactory.CreatePipeline(options);
