@@ -6,9 +6,9 @@ This index tracks all 47 engineering tasks across Phases 0 through 2.5 of the Sc
 
 | Status | Count | Percentage |
 | :--- | :---: | :---: |
-| **Done / Complete** | 46 | 97.9% |
+| **Done / Complete** | 47 | 100.0% |
 | **In Progress** | 0 | 0.0% |
-| **Blocked** | 1 | 2.1% |
+| **Blocked** | 0 | 0.0% |
 | **Not Started** | 0 | 0.0% |
 | **Total Tasks** | **47** | **100.0%** |
 
@@ -20,7 +20,7 @@ This index tracks all 47 engineering tasks across Phases 0 through 2.5 of the Sc
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **PH0-SPIKE-001** | Validate sherpa-onnx against custom Nemotron-3 Diarization export | Phase 0 | **Done** | None | ADR-0003, ADR-0004 | [`phase0-spike.md`](phase0-spike.md) |
 | **PH0-SPIKE-002** | End-to-end desktop proof of concept, one file, English | Phase 0 | **Done** | PH0-SPIKE-001 | ADR-0003, ADR-0004, ADR-0005 | [`phase0-spike.md`](phase0-spike.md) |
-| **PH0-SPIKE-003** | Persian audio validation pass (spike) | Phase 0 | **Blocked** | PH0-SPIKE-002 | ADR-0004, ADR-0005 | [`phase0-spike.md`](phase0-spike.md) |
+| **PH0-SPIKE-003** | Persian audio validation pass (spike) | Phase 0 | **Done** | PH0-SPIKE-002 | ADR-0004, ADR-0005 | [`phase0-spike.md`](phase0-spike.md) |
 | **PH0-SPIKE-004** | On-device mobile feasibility benchmark, Android (spike) | Phase 0 | **Done** | PH0-SPIKE-002 | ADR-0003, ADR-0006, ADR-0011 | [`phase0-spike.md`](phase0-spike.md) |
 | **PH1-CORE-001** | Define Scriber.Core domain models | Phase 1 | **Done** | None | ADR-0001 | [`phase1-core-pipeline.md`](phase1-core-pipeline.md) |
 | **PH1-CORE-002** | Audio import & decode to normalized PCM | Phase 1 | **Done** | PH1-CORE-001 | ADR-0001, ADR-0012 | [`phase1-core-pipeline.md`](phase1-core-pipeline.md) |

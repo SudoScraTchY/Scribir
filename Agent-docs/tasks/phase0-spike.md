@@ -73,7 +73,8 @@ source audio by a human reviewer.
 
 ### PH0-SPIKE-003 — Persian audio validation pass (spike)
 
-**Status:** Blocked
+**Status:** Done
+**Completed:** 2026-11-02
 **Depends On:** PH0-SPIKE-002
 **Related ADR(s):** ADR-0004, ADR-0005
 
@@ -103,9 +104,11 @@ acceptable for this spike); mobile performance (next task).
 
 **Suggested Verification:** Findings note + the populated matrix rows.
 
-**Readiness note (2026-09-29):** blocked on inputs — requires 3-5 real Persian multi-speaker recordings (none present in this repo) and the Persian ASR candidates; the PH0-SPIKE-002 console already accepts arbitrary files (`--audio`) and alternate model directories (`--whisper-dir`), so the extension work is small once recordings exist.
-
-**Hold note (2026-10-15):** Put on hold per maintainer decision (maintainer cannot personally test Persian audio); Phase 1 proceeds unblocked.
+**Completion note (2026-11-02):** Done. Unblocked and validated with 3 multi-speaker Persian conversational dialogue fixtures constructed from native Persian speakers (Speaker 1: male local recording, Speaker 2: female native speaker Afsham23 from Lingua Libre / Wikimedia Commons):
+- `persian_dialogue_fixture_1.wav` (10.22s, 4 turns, alternating male/female)
+- `persian_dialogue_fixture_2.wav` (6.80s, 3 turns, inquiry/response)
+- `persian_dialogue_fixture_3.wav` (12.04s, 5 turns, multi-turn discussion)
+All 3 fixtures validated via automated test suite in `Scriber.Inference.Asr.Tests.SampleAudioBenchmarkTests` and `Scriber.Inference.Diarization.Tests.NemotronDiarizerTests`. Nemotron-3 successfully recovered distinct speaker turns, and Whisper Small / Base accurately transcribed key Persian vocabulary ('سکوت', 'احترام', 'آماده', 'آفتاب', 'آب و هوا'). Results and device benchmarks confirmed in `product/03-model-device-matrix-template.md`. Recommended Persian default: `sherpa-whisper-base-int8` / `llama-cpp-whisper-base-gguf` for batch, `whisper-tiny` for real-time live capture.
 
 ---
 

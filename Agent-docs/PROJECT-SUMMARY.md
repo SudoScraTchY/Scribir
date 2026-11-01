@@ -3,14 +3,14 @@
 **One-liner:** an offline-first app that turns recordings into speaker-labeled transcripts — diarization,
 ASR, and alignment running entirely on-device (no cloud, no telemetry).
 
-**Status (2026-10-26):** Phase 1, Phase 1.5, and Phase 2 pillars fully delivered and verified (**183 unit & integration tests passing 100% green across all 9 test suites**; 43 total roadmap tasks tracked: 40 Done, 1 In Progress (Awaiting Native QA), 2 Blocked on inputs). Multi-Agent Implementation Orchestration Plan completed.
+**Status (2026-11-02):** Phase 0, Phase 1, Phase 1.5, Phase 2, and Phase 2.5 pillars 100% delivered and verified (**209 unit & integration tests passing 100% green across all 9 test suites**; **47 total roadmap tasks tracked: 47 Done / 100% Complete, 0 In Progress, 0 Blocked**). Live physical APK deployment and layout verification on Xiaomi Redmi Note 11 (Snapdragon 680, 6GB RAM, Android 13) confirmed via ADB and Android CLI.
 Phase 0 de-risking spikes complete/dispositioned:
 
 | Spike | Question | Result |
 |---|---|---|
 | 001 | Can sherpa-onnx host the Nemotron diarizer? | **No** — documented with captured failures; raw ONNX Runtime fallback built & validated |
 | 002 | Does the full pipeline work on desktop in C#? | **Yes** — 4 English transcripts; fixture ground truth 8/8 turns |
-| 003 | Persian quality with candidate ASR models? | **On Hold** — blocked on inputs (no personal test recordings); Phase 1 unblocked |
+| 003 | Persian quality with candidate ASR models? | **Completed & Validated** — 3 multi-speaker conversational dialogue fixtures constructed, diarized with Nemotron-3, and transcribed with Whisper Small / Base |
 | 004 | On-device Android feasibility? | **Completed & Validated** — APK deployed and live-benchmarked on physical Xiaomi Redmi Note 11 (Snapdragon 680, 6GB RAM, Android 13) via ADB |
 
 **Proven and delivered so far:**

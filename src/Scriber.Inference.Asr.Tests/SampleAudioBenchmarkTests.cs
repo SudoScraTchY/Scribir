@@ -90,4 +90,41 @@ public class SampleAudioBenchmarkTests
         Assert.True(recognized.Contains("podcast") && recognized.Contains("clarify"),
             $"Expected words 'podcast' and 'clarify'. Recognized: '{recognized}', GroundTruth: '{groundTruth}'");
     }
+
+    [Theory]
+    [InlineData("persian_dialogue_fixture_1.wav", "persian_dialogue_fixture_1.groundtruth.txt")]
+    [InlineData("persian_dialogue_fixture_2.wav", "persian_dialogue_fixture_2.groundtruth.txt")]
+    [InlineData("persian_dialogue_fixture_3.wav", "persian_dialogue_fixture_3.groundtruth.txt")]
+    public async Task Benchmark_PersianMultiSpeakerDialogue_ValidatesTranscription(string wavFile, string gtFile)
+    {
+        string samplePath = Path.Combine(RepoRoot(), "test_data", "audio", wavFile);
+        string gtPath = Path.Combine(RepoRoot(), "test_data", "audio", gtFile);
+        Assert.True(File.Exists(samplePath), $"Sample file not found: {samplePath}");
+        Assert.True(File.Exists(gtPath), $"Ground truth file not found: {gtPath}");
+
+        var decoder = new FfmpegAudioDecoder();
+        var audio = await decoder.DecodeAsync(samplePath);
+
+        using var backend = new SherpaWhisperAsrBackend(new SherpaWhisperConfig
+        {
+            EncoderPath = Path.Combine(GetWhisperDir(), "small-encoder.int8.onnx"),
+            DecoderPath = Path.Combine(GetWhisperDir(), "small-decoder.int8.onnx"),
+            TokensPath = Path.Combine(GetWhisperDir(), "small-tokens.txt"),
+            Language = "fa"
+        });
+
+        var segments = await backend.TranscribeAsync(audio, new AsrOptions { LanguageCode = "fa" });
+        Assert.NotEmpty(segments);
+
+        string recognized = string.Join(" ", segments.Select(s => s.Text)).Trim();
+        string groundTruth = (await File.ReadAllTextAsync(gtPath)).Trim();
+
+        _output.WriteLine($"[{wavFile} GROUND TRUTH]: {groundTruth}");
+        _output.WriteLine($"[{wavFile} RECOGNIZED  ]: {recognized}");
+
+        Assert.False(string.IsNullOrWhiteSpace(recognized));
+        // Verify that Persian speech is accurately transcribed from either speaker turn
+        Assert.True(recognized.Contains("سکوت") || recognized.Contains("احترام") || recognized.Contains("آماده") || recognized.Contains("هوا") || recognized.Contains("آفتاب"),
+            $"Expected recognized Persian vocabulary in transcript. Recognized: '{recognized}'");
+    }
 }

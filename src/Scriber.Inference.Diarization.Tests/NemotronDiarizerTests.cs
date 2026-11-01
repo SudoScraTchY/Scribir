@@ -133,4 +133,29 @@ public class NemotronDiarizerTests
             Assert.InRange(turns[i].End.TotalSeconds, expEnd - 0.25, expEnd + 0.25);
         }
     }
+
+    [Fact]
+    public async Task DiarizeAsync_PersianMultiSpeakerFixture_RecoversTurns()
+    {
+        string persianPath = Path.Combine(RepoRoot(), "test_data", "audio", "persian_dialogue_fixture_1.wav");
+        Assert.True(File.Exists(persianPath), $"Persian sample not found at: {persianPath}");
+
+        var decoder = new FfmpegAudioDecoder();
+        var audio = await decoder.DecodeAsync(persianPath);
+
+        using var diarizer = CreateDiarizer();
+        var options = new DiarizationOptions
+        {
+            Mode = DiarizationMode.Streaming,
+            Threshold = 0.5f,
+            SpeakerIdPrefix = "speaker-"
+        };
+
+        var turns = await diarizer.DiarizeAsync(audio, options);
+
+        // Expect at least 2 distinct speakers detected in the multi-speaker Persian clip
+        Assert.NotEmpty(turns);
+        var distinctSpeakers = turns.Select(t => t.SpeakerId).Distinct().ToList();
+        Assert.True(distinctSpeakers.Count >= 2, $"Expected at least 2 speakers detected, found: {distinctSpeakers.Count}");
+    }
 }
